@@ -6,12 +6,11 @@
 * [email 端点](./docs/email.md)
 * [admin 端点](./docs/admin.md)
 
-具体的 back 和 front 文档仅供参考，可不按要求。但 API 接口必须按要求编写，以便实现前后端随意适配。
-
 ## 技术约定
 
 * 遵循 `RESTful API` 技术规范。
 * 本文中字符编码一律使用 UTF-8。
+* 请求与响应均为 JSON 格式。
 * `Content-Type` 均为 `application/json; charset=utf-8`。
 * 统一使用 ISO 8601 格式的 UTC 字符串表示时间。
 * 密码使用 Bcrypt 加密存储。
@@ -42,3 +41,9 @@ Http 状态码按通用约定返回。
 | SameSite |    Lax    | 防 CSRF      |
 |   Path   |     /     |             |
 | Max-Age  | 86400（示例） | 24 小时过期（示例） |
+
+
+## 数据库表结构约定
+
+
+
