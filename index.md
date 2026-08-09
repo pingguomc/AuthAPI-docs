@@ -6,6 +6,8 @@
 * [email 端点](./docs/email.md)
 * [admin 端点](./docs/admin.md)
 
+具体的 back 和 front 文档仅供参考，可不按要求。但 API 接口必须按要求编写，以便实现前后端随意适配。
+
 ## 技术约定
 
 * 遵循 `RESTful API` 技术规范。
