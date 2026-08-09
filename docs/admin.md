@@ -11,10 +11,11 @@
 - [GET /admin/users/{userId}](#get-adminusersuserid)
 - [端点:/admin/bans](#端点adminbans)
     - [POST /admin/bans/{userId}](#post-adminbansuserid)
+    - [GET /admin/users](#get-adminusers)
     - [GET /admin/bans/{userId}](#get-adminbansuserid)
     - [DELETE /admin/bans/{userId}](#delete-adminbansuserid)
 - [POST /admin/session-revocations/{userId}](#post-adminsession-revocationsuserid)
-- [POST /admin/role-grants/{userId}](#post-adminrole-grantsuserid)
+- [POST /admin/role-grants/{userId}](#post-adminrole-grantsuserid-下个版本废弃)
 - [GET /admin/audit-logs](#get-adminaudit-logs)
 
 ## 数据模型
@@ -42,7 +43,7 @@
 
 **status 不可直接写入**。 封禁记录(ban)是事实来源,`users.status` 与 `bannedUntil` 仅为其投影,由服务层在写入 ban 时同步维护。本文档不提供任何直接修改 `status` 的接口。
 
-临时封禁到期采用惰性回写:仅在 **会话鉴权/登录** 与 [GET /admin/users/{userId}](#get-adminusersuserid) 两处检测到 `bannedUntil` 已过期时,就地将 `status` 改回 `active`。列表接口不回写,其正确性由查询条件保证。
+临时封禁到期采用惰性回写:仅在 **会话鉴权/登录** 与 [GET /admin/users](#get-adminusers) 两处检测到 `bannedUntil` 已过期时,就地将 `status` 改回 `active`。列表接口不回写,其正确性由查询条件保证。
 
 所有返回 `status` 的接口均返回 **计算过期后的有效值** ,前端不需要自行比较 `bannedUntil` 与当前时间。
 
@@ -50,23 +51,23 @@
 
 用户列表。
 
-**请求参数**(Query):
+**请求**：无请求体，查询参数如下：
 
-|         参数         |   类型   | 说明 |
-|:------------------:|:------:| --- |
-|       `page`       |  int   | 页码,从 1 开始,默认 1 |
-|     `pageSize`     |  int   | 每页条数,默认 20,上限 100 |
-|        `q`         | string | 邮箱精确匹配 **或** 用户名前缀匹配,不做全文模糊 |
-|       `role`       | string | 按角色筛选 |
-|      `status`      | string | 按状态筛选 |
-| `registeredAfter`  | string | 注册时间下界,ISO 8601 UTC |
-| `registeredBefore` | string | 注册时间上界,ISO 8601 UTC |
+|         参数         |   类型   | 说明                                           |
+|:------------------:|:------:|----------------------------------------------|
+|       `page`       |  int   | 页码,从 1 开始,默认 1                               |
+|     `pageSize`     |  int   | 每页条数,默认 20,上限 100                            |
+|        `q`         | string | 邮箱精确匹配 **或** 用户名前缀匹配,不做全文模糊                  |
+|       `role`       | string | 按角色筛选                                        |
+|      `status`      | string | 按状态筛选                                        |
+| `registeredAfter`  | string | 注册时间下界,ISO 8601 UTC                          |
+| `registeredBefore` | string | 注册时间上界,ISO 8601 UTC                          |
 |      `sortBy`      | string | 仅接受 `createdAt`、`lastLoginAt`,默认 `createdAt` |
-|      `order`       | string | `asc` / `desc`,默认 `desc` |
+|      `order`       | string | `asc` / `desc`,默认 `desc`                     |
 
 `sortBy` 取值不在白名单内返回 `400`。
 
-**响应**:成功返回HTTP状态码 `200`:
+**响应**: 成功返回HTTP状态码 `200`，响应体如下：
 
 ```json5
 {
@@ -91,7 +92,7 @@
 }
 ```
 
-**备注**:
+**备注** :
 * 列表不返回 IP 类字段与 OIDC 绑定信息，二者仅在详情接口提供。
 * `status = banned` 的筛选条件需实现为 `status = 'banned' AND (bannedUntil IS NULL OR bannedUntil > now())`。
 * 本接口不触发过期回写。
@@ -100,7 +101,9 @@
 
 用户详情。
 
-**响应**:成功返回HTTP状态码 `200`:
+**请求**：无请求体。
+
+**响应**: 成功返回HTTP状态码 `200`:
 
 ```json5
 {
@@ -125,11 +128,12 @@
 
 用户不存在返回 `404`,`error` 为 `UserNotFound`。
 
-**备注**:本接口会触发临时封禁的过期回写。
+**备注**: 本接口会触发临时封禁的过期回写。
 
 ## 端点：/admin/bans
 
-封禁记录。同一用户同时只允许存在一条生效中的封禁记录。以 `{userId}` 标识封禁对象。**DELETE 为物理删除**：删除封禁记录即同步将用户 `status` 改回 `active`、`bannedUntil` 置 `null`，并写入审计日志。
+封禁记录。  
+同一用户同时只允许存在一条生效中的封禁记录。以 `{userId}` 标识封禁对象。删除封禁记录即同步将用户 `status` 改回 `active`、`bannedUntil` 置 `null`，并写入审计日志。
 
 ### POST /admin/bans/{userId}
 
@@ -139,12 +143,12 @@
 
 ```json5
 {
-  "bannedUntil": "2026-09-01T00:00:00Z", //可空,null 表示永久封禁
-  "reason": "违反社区规则"                 //可选
+  "bannedUntil": "2026-09-01T00:00:00Z", // 解封时间,null 表示永久封禁
+  "reason": "违反社区规则" // 可选
 }
 ```
 
-**响应**:成功返回HTTP状态码 `201`:
+**响应**: 成功返回HTTP状态码 `201`:
 
 ```json5
 {
@@ -162,23 +166,23 @@
 * 创建成功会同步更新 `users.status` 与 `users.bannedUntil`,并**清除该用户的全部会话**,该次会话清除不额外产生 `user.session_revoke` 审计记录。
 * 目标用户不存在返回 `404`,`error` 为 `UserNotFound`。
 
-### GET /admin/bans/{userId}
+### GET /admin/bans
 
-封禁记录查询。
+查询封禁记录列表。
 
 **请求参数**(Query):
 
-|     参数     |   类型   | 说明 |
-|:----------:|:------:| --- |
-|  `active`  |  bool  | 仅返回/排除生效中的记录 |
-|   `page`   |  int   | 页码,默认 1 |
-| `pageSize` |  int   | 每页条数,默认 20 |
+|     参数     |  类型  | 说明           |
+|:----------:|:----:|--------------|
+|  `active`  | bool | 仅返回/排除生效中的记录 |
+|   `page`   | int  | 页码,默认 1      |
+| `pageSize` | int  | 每页条数,默认 20   |
 
 **响应**:成功返回HTTP状态码 `200`,分页封装结构与 [GET /admin/users](#get-adminusers) 一致,`items` 为封禁记录对象,结构同 [POST /admin/bans/{userId}](#post-adminbansuserid) 响应,固定按 `createdAt` 倒序:
 
 ```json5
 {
-  "items": [
+  "banlists": [
     {
       "id": "ban_01H...",
       "userId": "u_01H...",
@@ -193,6 +197,14 @@
   "total": 42
 }
 ```
+
+### GET /admin/bans/{userId}
+
+该用户是否被封禁。
+
+**请求**：无请求体。
+
+**响应**：同 [POST /admin/bans/{userId}](#post-adminbansuserid) 的响应。
 
 ### DELETE /admin/bans/{userId}
 
@@ -226,7 +238,7 @@
 }
 ```
 
-**响应**:成功返回HTTP状态码 `201`:
+**响应**: 成功返回HTTP状态码 `200`:
 
 ```json5
 {
@@ -236,9 +248,9 @@
 }
 ```
 
-**备注**:会话清除同时也是封禁、角色变更的副作用,以及用户自行 [修改密码](./user.md#post-userchange-password-cookie身份验证) 的副作用。**仅通过本接口显式发起的清除** 才产生 `user.session_revoke` 审计记录,作为副作用触发的不重复记录。
+**备注**: 会话清除同时也是封禁、角色变更的副作用,以及用户自行 [修改密码](./user.md#post-userchange-password-cookie身份验证) 的副作用。**仅通过本接口显式发起的清除** 才产生 `user.session_revoke` 审计记录,作为副作用触发的不重复记录。
 
-## POST /admin/role-grants/{userId}
+## POST /admin/role-grants/{userId} (下个版本废弃)
 
 变更用户角色。
 
@@ -275,22 +287,22 @@
 
 审计日志 **只读**,不提供任何创建、修改、删除接口。
 
-**请求参数**(Query):
+**请求**：无请求体，查询参数如下：
 
-|       参数       |   类型   | 说明 |
-|:--------------:|:------:| --- |
-|  `operatorId`  | string | 操作者 |
-| `targetUserId` | string | 操作对象 |
+|       参数       |   类型   | 说明                   |
+|:--------------:|:------:|----------------------|
+|  `operatorId`  | string | 操作者                  |
+| `targetUserId` | string | 操作对象                 |
 |    `action`    | string | 动作,支持前缀匹配(如 `user.`) |
 |    `result`    | string | `success` / `denied` |
-|     `from`     | string | 时间下界,ISO 8601 UTC |
-|      `to`      | string | 时间上界,ISO 8601 UTC |
-|     `page`     |  int   | 页码,默认 1 |
-|   `pageSize`   |  int   | 每页条数,默认 20 |
+|     `from`     | string | 时间下界,ISO 8601 UTC    |
+|      `to`      | string | 时间上界,ISO 8601 UTC    |
+|     `page`     |  int   | 页码,默认 1              |
+|   `pageSize`   |  int   | 每页条数,默认 20           |
 
 固定按 `createdAt` 倒序,不开放排序参数。
 
-**响应**:成功返回HTTP状态码 `200`:
+**响应**: 成功返回HTTP状态码 `200`:
 
 ```json5
 {
@@ -319,18 +331,17 @@
 
 ### action 取值
 
-|           值           | 对应接口 |
-|:---------------------:| --- |
-|      `user.ban`       | [POST /admin/bans/{userId}](#post-adminbansuserid) |
-|    `user.ban_delete`  | [DELETE /admin/bans/{userId}](#delete-adminbansuserid) |
+|           值           | 对应接口                                                                             |
+|:---------------------:|----------------------------------------------------------------------------------|
+|      `user.ban`       | [POST /admin/bans/{userId}](#post-adminbansuserid)                               |
+|   `user.ban_delete`   | [DELETE /admin/bans/{userId}](#delete-adminbansuserid)                           |
 | `user.session_revoke` | [POST /admin/session-revocations/{userId}](#post-adminsession-revocationsuserid) |
-|  `user.role_change`   | [POST /admin/role-grants/{userId}](#post-adminrole-grantsuserid) |
+|  `user.role_change`   | [POST /admin/role-grants/{userId}](#post-adminrole-grantsuserid-下个版本废弃)          |
 
 命名采用 `资源.动作` 形式。
 
 ### 写入规则
 
-* **先写审计,后做业务。** 审计写入失败则整个操作失败,不执行业务逻辑。
-* `result` 仅有 `success` 与 `denied` 两个终态,不做回填。因写入先于业务执行,`success` 的实际语义为「该操作已通过鉴权并被发起」;业务本身执行失败的情况需依赖应用日志排查,审计表中会残留一条记录。
-* **只记录鉴权层面的拒绝**(`denied`),即权限不足、角色不匹配等。参数校验失败、目标不存在等普通 `400` / `404` 不写入审计。
-* 记录操作者 IP。
+* **先做业务，后写审计。** 审计写入失败则整个操作失败，回滚业务逻辑。
+* **只记录鉴权层面的拒绝**，即权限不足、角色不匹配等。参数校验失败、目标不存在等普通 `400` / `404` 不写入审计。
+* 审计日志记录操作者 IP。
