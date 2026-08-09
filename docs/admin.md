@@ -1,4 +1,4 @@
-# 端点:/admin
+# 端点：/admin
 
 管理端点。本端点全部需要身份验证,采用 [Cookie HttpOnly 会话](../index.md#cookie-格式)。
 
@@ -10,11 +10,11 @@
 - [GET /admin/users](#get-adminusers)
 - [GET /admin/users/{userId}](#get-adminusersuserid)
 - [端点:/admin/bans](#端点adminbans)
-    - [POST /admin/bans](#post-adminbans)
-    - [GET /admin/bans](#get-adminbans)
-    - [POST /admin/bans/{banId}/revoke](#post-adminbansbanidrevoke)
-- [POST /admin/session-revocations](#post-adminsession-revocations)
-- [POST /admin/role-grants](#post-adminrole-grants)
+    - [POST /admin/bans/{userId}](#post-adminbansuserid)
+    - [GET /admin/bans/{userId}](#get-adminbansuserid)
+    - [DELETE /admin/bans/{userId}](#delete-adminbansuserid)
+- [POST /admin/session-revocations/{userId}](#post-adminsession-revocationsuserid)
+- [POST /admin/role-grants/{userId}](#post-adminrole-grantsuserid)
 - [GET /admin/audit-logs](#get-adminaudit-logs)
 
 ## 数据模型
@@ -129,7 +129,7 @@
 
 ## 端点：/admin/bans
 
-封禁记录。封禁记录 **不物理删除**，解封通过撤销实现。
+封禁记录。同一用户同时只允许存在一条生效中的封禁记录。以 `{userId}` 标识封禁对象。**DELETE 为物理删除**：删除封禁记录即同步将用户 `status` 改回 `active`、`bannedUntil` 置 `null`，并写入审计日志。
 
 ### POST /admin/bans/{userId}
 
@@ -153,16 +153,14 @@
   "bannedUntil": "2026-09-01T00:00:00Z",
   "reason": "违反社区规则",
   "operatorId": "u_01H...",
-  "createdAt": "2026-08-08T10:30:00Z",
-  "revokedBy": null,
-  "revokedAt": null
+  "createdAt": "2026-08-08T10:30:00Z"
 }
 ```
 
 **备注**:
-* 同一用户同时只允许存在一条生效中的封禁记录。已存在时返回 `409`,`error` 为 `BanAlreadyExists`。修改封禁时长需先撤销原记录再重新创建。
+* 同一用户同时只允许存在一条生效中的封禁记录。已存在时返回 `409`,`error` 为 `BanAlreadyExists`。修改封禁时长需先删除原记录再重新创建。
 * 创建成功会同步更新 `users.status` 与 `users.bannedUntil`,并**清除该用户的全部会话**,该次会话清除不额外产生 `user.session_revoke` 审计记录。
-* 目标用户不存在返回 `404`。
+* 目标用户不存在返回 `404`,`error` 为 `UserNotFound`。
 
 ### GET /admin/bans/{userId}
 
@@ -176,26 +174,45 @@
 |   `page`   |  int   | 页码,默认 1 |
 | `pageSize` |  int   | 每页条数,默认 20 |
 
-**响应**:成功返回HTTP状态码 `200`,结构同 [GET /admin/users](#get-adminusers) 的分页封装,`items` 为封禁记录对象。固定按 `createdAt` 倒序。
+**响应**:成功返回HTTP状态码 `200`,分页封装结构与 [GET /admin/users](#get-adminusers) 一致,`items` 为封禁记录对象,结构同 [POST /admin/bans/{userId}](#post-adminbansuserid) 响应,固定按 `createdAt` 倒序:
 
-### DELETE /admin/bans/{userId}
-
-撤销封禁(解封)。
-
-**请求**:
-
-```
+```json5
 {
-  "reason": "申诉通过"  //可选
+  "items": [
+    {
+      "id": "ban_01H...",
+      "userId": "u_01H...",
+      "bannedUntil": "2026-09-01T00:00:00Z",
+      "reason": "违反社区规则",
+      "operatorId": "u_01H...",
+      "createdAt": "2026-08-08T10:30:00Z"
+    }
+  ],
+  "page": 1,
+  "pageSize": 20,
+  "total": 42
 }
 ```
 
-**响应**:成功返回HTTP状态码 `200`,返回更新后的封禁记录,`revokedBy` 与 `revokedAt` 已填充。
+### DELETE /admin/bans/{userId}
+
+物理删除封禁记录(解封)。记录被删除后不可恢复,操作会写入审计日志。
+
+**请求**:
+
+```json5
+{
+  "reason": "申诉通过"  //可选,记录删除原因
+}
+```
+
+**响应**:成功返回HTTP状态码 `204`,无响应体。
 
 **备注**:
-* 记录已被撤销或已自然到期时返回 `409`,`error` 为 `BanAlreadyRevoked`。
-* 撤销成功会同步将 `users.status` 改回 `active`、`bannedUntil` 置 `null`。
-* 撤销不清除会话。
+* 不存在该用户的封禁记录时返回 `404`,`error` 为 `BanNotFound`。
+* 删除成功会同步将 `users.status` 改回 `active`、`bannedUntil` 置 `null`。
+* 删除需先通过鉴权;若鉴权层面被拒绝(权限不足、角色不匹配),会写入 `denied` 审计记录。
+* 删除不清除会话。
 
 ## POST /admin/session-revocations/{userId}
 
@@ -304,10 +321,10 @@
 
 |           值           | 对应接口 |
 |:---------------------:| --- |
-|      `user.ban`       | [POST /admin/bans](#post-adminbans) |
-|     `user.unban`      | [POST /admin/bans/{banId}/revoke](#post-adminbansbanidrevoke) |
-| `user.session_revoke` | [POST /admin/session-revocations](#post-adminsession-revocations) |
-|  `user.role_change`   | [POST /admin/role-grants](#post-adminrole-grants) |
+|      `user.ban`       | [POST /admin/bans/{userId}](#post-adminbansuserid) |
+|    `user.ban_delete`  | [DELETE /admin/bans/{userId}](#delete-adminbansuserid) |
+| `user.session_revoke` | [POST /admin/session-revocations/{userId}](#post-adminsession-revocationsuserid) |
+|  `user.role_change`   | [POST /admin/role-grants/{userId}](#post-adminrole-grantsuserid) |
 
 命名采用 `资源.动作` 形式。
 

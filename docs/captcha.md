@@ -36,11 +36,11 @@
     "theme": "auto",
     "size": "normal"
   },
-  "actions": {                      // 各动作的开关,键为动作标识
+  "actions": {                      // 各动作的开关,键为动作标识,见[受保护的动作](#受保护的动作)
     "register": { "enabled": true,  "mode": "always" },
     "login": { "enabled": true,  "mode": "always" },
-    "email-code": { "enabled": true,  "mode": "always" },
-    "change-password": { "enabled": false, "mode": "onDemand" }
+    "email-code-register": { "enabled": true,  "mode": "always" },
+    "email-code-login": { "enabled": true,  "mode": "always" }
   }
 }
 ```
@@ -65,8 +65,8 @@
 |        `scriptUrl` |  string  | SDK 脚本地址,由后端下发以便切换 CDN 或 provider         |
 |          `options` |  object  | 透传给 widget 的渲染选项,可为 null                  |
 |          `actions` |  object  | 动作开关表。键为动作标识,见[受保护的动作](#受保护的动作)           |
-|  `actions[*].enabled` | boolean | 该动作是否需要人机验证                                |
-|     `actions[*].mode` | string  | `always`:每次都需要;`onDemand`:平时不需要,后端按风控临时索要 |
+|  `actions[*].enabled` | boolean | 该动作是否需要人机验证,键为动作标识 |
+|   `actions[*].mode`  | string  | `always`:每次都需要;`onDemand`:平时不需要,后端按风控临时索要 |
 
 **备注**:
 * 该端点响应可被缓存,建议后端设置 `Cache-Control: max-age=60` 与 `ETag`。
@@ -139,7 +139,7 @@ mode = "onDemand" 且风控未命中        → 本次放行
 provider 故障或大面积误杀时,运维需能在 1 分钟内将 `enabled` 置为 `false` 摘除全站。
 
 **开关切换竞态**:后端刚开启开关而前端仍持旧配置时,业务请求会缺 token。
-此时后端返回 `CAPTCHA_MISSING`,前端**必须**重新拉取配置、渲染 widget 并自动重试一次,
+此时后端返回 `CaptchaMissing`,前端**必须**重新拉取配置、渲染 widget 并自动重试一次,
 且**不得清空用户已填写的表单内容**。反向竞态(后端已关闭、前端仍发 token)由上表"忽略不报错"兜底。
 
 ## 错误码
@@ -148,18 +148,18 @@ provider 故障或大面积误杀时,运维需能在 1 分钟内将 `enabled` �
 
 |  HTTP |                       error | 含义                     | 前端处理                 |
 |------:|----------------------------:|------------------------|----------------------|
-| `400` |          `CAPTCHA_MISSING`  | 该动作需要人机验证但未携带 token    | 重新拉取配置 → 渲染 widget → 自动重试 |
-| `400` |          `CAPTCHA_EXPIRED`  | token 已过期(Turnstile 为 300 秒) | 重置 widget,保留表单数据后重试  |
-| `400` |          `CAPTCHA_INVALID`  | provider 判定失败,或 token 已被使用 | 重置 widget 后重试        |
-| `400` |  `CAPTCHA_ACTION_MISMATCH`  | token 的动作标识与端点不匹配      | 重新验证                 |
-| `403` |         `CAPTCHA_REQUIRED`  | `onDemand` 模式下后端临时索要验证 | 弹出 widget,完成后自动重试原请求 |
-| `403` |    `CAPTCHA_SCORE_TOO_LOW`  | 评分型 provider 分数不足(预留)  | 提示用户或降级为交互式挑战        |
-| `503` | `CAPTCHA_SERVICE_UNAVAILABLE` | provider 接口故障且策略为 fail-closed | 提示稍后重试               |
+| `400` |          `CaptchaMissing`  | 该动作需要人机验证但未携带 token    | 重新拉取配置 → 渲染 widget → 自动重试 |
+| `400` |          `CaptchaExpired`  | token 已过期(Turnstile 为 300 秒) | 重置 widget,保留表单数据后重试  |
+| `400` |          `CaptchaInvalid`  | provider 判定失败,或 token 已被使用 | 重置 widget 后重试        |
+| `400` |  `CaptchaActionMismatch`  | token 的动作标识与端点不匹配      | 重新验证                 |
+| `403` |         `CaptchaRequired`  | `onDemand` 模式下后端临时索要验证 | 弹出 widget,完成后自动重试原请求 |
+| `403` |    `CaptchaScoreTooLow`  | 评分型 provider 分数不足(预留)  | 提示用户或降级为交互式挑战        |
+| `503` | `CaptchaServiceUnavailable` | provider 接口故障且策略为 fail-closed | 提示稍后重试               |
 
 **响应示例**:
 ```json5
 {
-  "error": "CAPTCHA_EXPIRED",
+  "error": "CaptchaExpired",
   "errorMessage": "人机验证已过期,请重新验证",
   "cause": "timeout-or-duplicate"    // 可选,provider 原始错误码
 }
@@ -173,8 +173,8 @@ provider 故障或大面积误杀时,运维需能在 1 分钟内将 `enabled` �
 
 1. 读取配置(建议本地缓存 5 秒),若 `enabled` 为 `false`,跳过校验,进入业务逻辑
 2. 若 `actions[action].enabled` 为 `false`,跳过校验
-3. 若 `mode` 为 `onDemand` 且风控未命中,跳过校验;命中则返回 `403 CAPTCHA_REQUIRED`
-4. 读取 `X-Captcha-Token`,为空则返回 `400 CAPTCHA_MISSING`
+3. 若 `mode` 为 `onDemand` 且风控未命中,跳过校验;命中则返回 `403 CaptchaRequired`
+4. 读取 `X-Captcha-Token`,为空则返回 `400 CaptchaMissing`
 5. 调用 provider 的 siteverify 接口,超时设为 2~3 秒
 6. 校验 `success`、`hostname`(须与本站域名一致)、`action`(须与端点匹配)
 7. 校验失败则按[错误码](#错误码)映射返回;调用异常按失败策略处理

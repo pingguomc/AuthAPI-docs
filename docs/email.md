@@ -12,14 +12,14 @@
 
 **请求**：
 ```json5
-{ 
+{
   "email": "user@example.com"
 }
 ```
 
 **响应**：成功则返回HTTP状态码 `200`。
 
-备注：需校验邮箱是否已被注册。
+备注：需校验邮箱是否已被注册，以决定是否发送验证码。若已被另一账户注册，本次不发验证码，返回 `409`,`error` 为 `EmailAlreadyRegistered`。
 
 ### POST /email/code/login (人机验证) 
 
@@ -35,7 +35,7 @@
 **响应**：
 成功则返回HTTP状态码 `200`。
 
-备注：需校验邮箱是否已被注册。
+备注：需校验邮箱是否已被注册。若未注册，返回 `404`,`error` 为 `EmailNotRegistered`,且不发验证码。
 
 ### POST /email/code/change-password (Cookie身份验证)
 

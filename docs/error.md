@@ -2,12 +2,12 @@
 
 | HTTP状态码 |             error             | errorMessage（建议默认文案）              | 适用端点                                                                                                       |
 |:-------:|:-----------------------------:|:----------------------------------|------------------------------------------------------------------------------------------------------------|
-| **400** |   `CAPTCHA_ACTION_MISMATCH`   | 人机验证动作不匹配，请重新验证                   | 所有受人机验证保护的端点                                                                                               |
-| **400** |       `CAPTCHA_EXPIRED`       | 人机验证已过期，请重新验证                     | 所有受人机验证保护的端点                                                                                               |
-| **400** |       `CAPTCHA_INVALID`       | 人机验证失败，请重试                        | 所有受人机验证保护的端点                                                                                               |
-| **400** |       `CAPTCHA_MISSING`       | 该操作需要人机验证，请完成验证                   | 所有受人机验证保护的端点                                                                                               |
+| **400** |   `CaptchaActionMismatch`  | 人机验证动作不匹配，请重新验证                   | 所有受人机验证保护的端点                                                                                               |
+| **400** |        `CaptchaExpired`      | 人机验证已过期，请重新验证                     | 所有受人机验证保护的端点                                                                                               |
+| **400** |        `CaptchaInvalid`      | 人机验证失败，请重试                        | 所有受人机验证保护的端点                                                                                               |
+| **400** |        `CaptchaMissing`      | 该操作需要人机验证，请完成验证                   | 所有受人机验证保护的端点                                                                                               |
 | **400** |      `EmailCodeExpired`       | 邮箱验证码已过期，请重新获取                    | `POST /user/change-password`、`PUT /user/email`                                                             |
-| **400** |        `EmailMismatch`        | 邮箱与发验证码时不一致                       | `PUT /user/email`                                                                                          |
+| **400** |      `EmailMismatch`        | 邮箱与发验证码时不一致                       | `PUT /user/email`、`POST /email/code/set-email`                                            |
 | **400** |       `IdTokenInvalid`        | 登录凭证校验失败，请重试                      | `GET /user/oidc/{providerId}/callback`                                                                     |
 | **400** |     `InvalidDisplayName`      | 显示名称格式不正确                         | `POST /user/register`                                                                                      |
 | **400** |        `InvalidEmail`         | 邮箱格式不正确                           | `POST /user/register`、`POST /email/code/*`                                                                 |
@@ -21,8 +21,8 @@
 | **400** |        `WeakPassword`         | 密码强度不足，需包含字母和数字且不少于6位             | `POST /user/register`、`POST /user/change-password`                                                         |
 | **401** |     `InvalidCredentials`      | 邮箱或密码错误（或邮箱或验证码错误）                | `POST /user/login`                                                                                         |
 | **401** |        `Unauthorized`         | 请先登录                              | 所有需要 Cookie 身份验证的端点                                                                                        |
-| **403** |      `CAPTCHA_REQUIRED`       | 本次操作需要人机验证，请完成挑战                  | `onDemand` 模式下触发的端点                                                                                        |
-| **403** |    `CAPTCHA_SCORE_TOO_LOW`    | 人机验证评分不足，请重试                      | 评分型 provider 的端点（预留）                                                                                       |
+| **403** |      `CaptchaRequired`       | 本次操作需要人机验证，请完成挑战                  | `onDemand` 模式下触发的端点                                                                                        |
+| **403** |    `CaptchaScoreTooLow`      | 人机验证评分不足，请重试                      | 评分型 provider 的端点（预留）                                                                                       |
 | **403** |          `Forbidden`          | 无权执行此操作                           | 所有需要特定角色的端点（含管理后台入口）                                                                                       |
 | **403** |     `InvalidOldPassword`      | 旧密码错误                             | `POST /user/change-password`                                                                               |
 | **403** |         `LoginLocked`         | 登录失败次数过多，请稍后再试                    | `POST /user/login`                                                                                         |
@@ -31,13 +31,13 @@
 | **404** |     `EmailNotRegistered`      | 该邮箱未注册                            | `POST /email/code/login`                                                                                   |
 | **404** |      `ProviderNotFound`       | 不支持该 OIDC 提供商                     | `GET /user/oidc/{providerId}/*`                                                                            |
 | **404** |      `ProviderNotBound`       | 未绑定该 OIDC 提供商                     | `DELETE /user/oidc/{providerId}`                                                                           |
-| **404** |        `UserNotFound`         | 用户不存在                             | `GET /admin/users/{userId}`、`POST /admin/bans`、`POST /admin/session-revocations`、`POST /admin/role-grants` |
+| **404** |        `UserNotFound`         | 用户不存在                             | `GET /admin/users/{userId}`、`POST /admin/bans/{userId}`、`POST /admin/session-revocations/{userId}`、`POST /admin/role-grants/{userId}` |
+| **404** |         `BanNotFound`         | 未找到该用户的封禁记录                       | `GET /admin/bans/{userId}`、`DELETE /admin/bans/{userId}` |
 | **409** |        `AlreadyBound`         | 已绑定该 OIDC 提供商，无需重复绑定              | `GET /user/oidc/{providerId}/bind`                                                                         |
-| **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /admin/bans`                                                                                         |
-| **409** |      `BanAlreadyRevoked`      | 该封禁记录已被撤销或已到期                     | `POST /admin/bans/{banId}/revoke`                                                                          |
+| **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /admin/bans/{userId}`                                                                                         |
 | **409** |   `EmailAlreadyRegistered`    | 该邮箱已被注册                           | `POST /user/register`、`POST /email/code/register`、`PUT /user/email`                                        |
 | **409** |    `ProviderAlreadyBound`     | 该账号已绑定其他用户                        | `GET /user/oidc/{providerId}/callback`（bind 场景）                                                            |
 | **429** |    `EmailCodeRateLimited`     | 验证码发送过于频繁，请稍后再试                   | `POST /email/code/*`                                                                                       |
 | **429** |         `RateLimited`         | 操作过于频繁，请稍后再试                      | 所有端点（通用限流）                                                                                                 |
 | **500** |        `InternalError`        | 服务器内部错误，请稍后重试                     | 所有端点                                                                                                       |
-| **503** | `CAPTCHA_SERVICE_UNAVAILABLE` | 人机验证服务暂不可用，请稍后重试                  | 所有受人机验证保护的端点                                                                                               |
+| **503** | `CaptchaServiceUnavailable` | 人机验证服务暂不可用，请稍后重试                  | 所有受人机验证保护的端点                                                                                               |

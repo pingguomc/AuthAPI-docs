@@ -49,14 +49,14 @@
 ```json5
 {
   "email": "user@example.com",
-  "password": "Abc123",
+  "password": "Abc123"
 }
 ```
 或
 ```json5
 {
   "email": "user@example.com",
-  "emailCode": "123456",
+  "emailCode": "123456"
 }
 ```
 
@@ -72,12 +72,11 @@
 ```json5
 {
   "userId": "be081dbc-3de9-4138-9e13-3cbc5439dd4a", // 随机示例
-  "role": "user",
+  "role": "user", // 角色,取值参考 admin.md 数据模型
   "displayName": "展示的用户名",
   "email": "绑定的邮箱", // 可能为空字符串
   "hasPassword": false, // 是否已设置密码
   "bindingOIDC": ["google","github"] // 内容为 providerID，可能为空
-  // 其他后续新增功能之时补充
 }
 ```
 
@@ -110,7 +109,7 @@
 
 **响应**：成功返回HTTP状态码 `204`，响应头 `Set-Cookie` 将 `sid` 设为过期，无响应体。
 
-**备注**：仅限登录的用户更改密码所用。忘记密码无法登陆者通过邮箱验证码或OIDC登录。
+**备注**：仅限登录的用户更改密码所用。忘记密码无法登录者可通过邮箱验证码或OIDC登录。
 
 ## PUT /user/email (Cookie身份验证)
 
@@ -126,7 +125,7 @@
 
 **后端处理**：
 1. 校验 emailCode 是否正确且未过期
-2. 校验 newEmail 与发验证码时一致
+2. 校验 `email`(请求中的新邮箱)与发验证码时使用的邮箱一致
 3. 数据库更新邮箱
 4. 清除该验证码
 
