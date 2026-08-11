@@ -2,6 +2,14 @@
 
 对应 [Yggdrasil-服务端技术规范](https://yushijinhun.github.io/authlib-injector/zh/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83.html)。
 
+## 目录
+
+- [会话部分](#会话部分)
+  - [客户端进入服务器](#客户端进入服务器)
+  - [服务端验证客户端](#服务端验证客户端)
+- [角色部分](#角色部分)
+  - [查询角色属性](#查询角色属性)
+
 ## 会话部分
 
 1. 服务端向待进服的玩家发送 serverId，其可以被视为一个随机的字符串。
@@ -18,7 +26,7 @@
 
 ### 客户端进入服务器
 
-`POST /sessionserver/session/minecraft/join`
+`POST /yggdrasil/sessionserver/session/minecraft/join`
 
 记录服务端发送给客户端的 `serverId`，以备服务端检查。
 
@@ -44,7 +52,7 @@
 
 ### 服务端验证客户端
 
-`GET /sessionserver/session/minecraft/hasJoined?username={username}&serverId={serverId}&ip={ip}`
+`GET /yggdrasil/sessionserver/session/minecraft/hasJoined?username={username}&serverId={serverId}&ip={ip}`
 
 检查客户端会话的有效性，即数据库中是否存在该 `serverId` 的记录，且信息正确。
 
@@ -74,7 +82,7 @@
 
 ### 查询角色属性
 
-`GET /sessionserver/session/minecraft/profile/{uuid}?unsigned={unsigned}`
+`GET /yggdrasil/sessionserver/session/minecraft/profile/{uuid}?unsigned={unsigned}`
 
 查询指定角色的完整信息（包含角色属性）。
 

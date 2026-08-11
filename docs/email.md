@@ -1,6 +1,14 @@
 # 端点：/email
 
-本端点需要身份验证的采用 [Cookie HttpOnly 会话](../index.md#cookie-格式)，在端点后标 (cookie身份验证)。
+本端点需要身份验证的采用 [Cookie HttpOnly 会话](./index.md#cookie-格式)，在端点后标 (cookie身份验证)。
+
+## 目录
+
+- [端点：/email/code](#端点emailcode)
+   - [POST /email/code/register (人机验证)](#post-emailcoderegister-人机验证)
+   - [POST /email/code/login (人机验证)](#post-emailcodelogin-人机验证)
+   - [POST /email/code/change-password (Cookie身份验证)](#post-emailcodechange-password-cookie身份验证)
+   - [POST /email/code/set-email (Cookie身份验证)](#post-emailcodeset-email-cookie身份验证)
 
 ## 端点：/email/code
 

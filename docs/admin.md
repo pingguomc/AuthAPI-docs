@@ -1,6 +1,6 @@
 # 端点：/admin
 
-管理端点。本端点全部需要身份验证,采用 [Cookie HttpOnly 会话](../index.md#cookie-格式)。
+管理端点。本端点全部需要身份验证,采用 [Cookie HttpOnly 会话](./index.md#cookie-格式)。
 
 访问本端点下的任意接口要求会话用户 `role` 为 `admin`,否则返回 `403`。
 
@@ -11,7 +11,7 @@
 - [GET /admin/users/{userId}](#get-adminusersuserid)
 - [端点:/admin/bans](#端点adminbans)
     - [POST /admin/bans/{userId}](#post-adminbansuserid)
-    - [GET /admin/users](#get-adminusers)
+    - [GET /admin/bans](#get-adminbans)
     - [GET /admin/bans/{userId}](#get-adminbansuserid)
     - [DELETE /admin/bans/{userId}](#delete-adminbansuserid)
 - [POST /admin/session-revocations/{userId}](#post-adminsession-revocationsuserid)
@@ -178,7 +178,7 @@
 |   `page`   | int  | 页码,默认 1      |
 | `pageSize` | int  | 每页条数,默认 20   |
 
-**响应**:成功返回HTTP状态码 `200`,分页封装结构与 [GET /admin/users](#get-adminusers) 一致,`items` 为封禁记录对象,结构同 [POST /admin/bans/{userId}](#post-adminbansuserid) 响应,固定按 `createdAt` 倒序:
+**响应**:成功返回HTTP状态码 `200`,`banlists` 为封禁记录对象,结构同 [POST /admin/bans/{userId}](#post-adminbansuserid) 响应,固定按 `createdAt` 倒序:
 
 ```json5
 {

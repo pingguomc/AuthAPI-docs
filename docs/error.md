@@ -33,7 +33,6 @@
 | **404** |      `ProviderNotBound`       | 未绑定该 OIDC 提供商                     | `DELETE /user/oidc/{providerId}`                                                                           |
 | **404** |        `UserNotFound`         | 用户不存在                             | `GET /admin/users/{userId}`、`POST /admin/bans/{userId}`、`POST /admin/session-revocations/{userId}`、`POST /admin/role-grants/{userId}` |
 | **404** |         `BanNotFound`         | 未找到该用户的封禁记录                       | `GET /admin/bans/{userId}`、`DELETE /admin/bans/{userId}` |
-| **409** |        `AlreadyBound`         | 已绑定该 OIDC 提供商，无需重复绑定              | `GET /user/oidc/{providerId}/bind`                                                                         |
 | **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /admin/bans/{userId}`                                                                                         |
 | **409** |   `EmailAlreadyRegistered`    | 该邮箱已被注册                           | `POST /user/register`、`POST /email/code/register`、`PUT /user/email`                                        |
 | **409** |    `ProviderAlreadyBound`     | 该账号已绑定其他用户                        | `GET /user/oidc/{providerId}/callback`（bind 场景）                                                            |

@@ -2,9 +2,17 @@
 
 对应 [Yggdrasil-服务端技术规范 - 用户部分](https://yushijinhun.github.io/authlib-injector/zh/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83.html#%E7%94%A8%E6%88%B7%E9%83%A8%E5%88%86)。
 
+## 目录
+
+- [登录](#登录)
+- [刷新](#刷新)
+- [验证令牌](#验证令牌)
+- [吊销令牌](#吊销令牌)
+- [登出](#登出)
+
 ## 登录 
 
-`POST /authserver/authenticate`
+`POST /yggdrasil/authserver/authenticate`
 
 使用密码进行身份验证，并分配一个新的令牌。
 
@@ -59,7 +67,7 @@
 
 ## 刷新
 
-`POST /authserver/refresh`
+`POST /yggdrasil/authserver/refresh`
 
 吊销原令牌，并颁发一个新的令牌。
 
@@ -100,7 +108,7 @@
 
 ## 验证令牌
 
-`POST /authserver/validate`
+`POST /yggdrasil/authserver/validate`
 
 检验令牌是否有效。
 
@@ -118,6 +126,8 @@
 
 ## 吊销令牌
 
+`POST /yggdrasil/authserver/invalidate`
+
 吊销给定令牌。
 
 **请求**：
@@ -134,7 +144,7 @@
 
 ## 登出
 
-`POST /authserver/signout`
+`POST /yggdrasil/authserver/signout`
 
 吊销用户的所有令牌。
 

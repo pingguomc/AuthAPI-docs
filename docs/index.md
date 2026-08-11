@@ -2,9 +2,23 @@
 
 前后端通用。
 
-* [user 端点](./docs/user.md)
-* [email 端点](./docs/email.md)
-* [admin 端点](./docs/admin.md)
+## 本目录索引
+
+### 主端点
+
+- [user 端点](./user.md)
+- [email 端点](./email.md)
+- [admin 端点](./admin.md)
+- [captcha 端点](./captcha.md)
+- [错误码速查表](./error.md)
+
+### Yggdrasil 相关
+
+- [Yggdrasil 入口](./yggdrasil/index.md)
+- [材质和扩展 API](./yggdrasil/api.md)
+- [authserver（用户部分）](./yggdrasil/authserver.md)
+- [sessionserver（会话与角色）](./yggdrasil/sessionserver.md)
+- [签名密钥对](./yggdrasil/signature.md)
 
 ## 技术约定
 
@@ -22,7 +36,7 @@
 Http 状态码按通用约定返回。
 
 ```json5
-{ 
+{
   "error":"错误的简要描述（机器可读）",
   "errorMessage":"错误的详细信息（人类可读）",
   "cause":"该错误的原因（可选）"

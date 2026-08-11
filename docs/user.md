@@ -1,6 +1,6 @@
 # 端点：/user
 
-本端点需要身份验证的采用 [Cookie HttpOnly 会话](../index.md#cookie-格式)，在端点后标 (cookie身份验证)。
+本端点需要身份验证的采用 [Cookie HttpOnly 会话](./index.md#cookie-格式)，在端点后标 (cookie身份验证)。
 
 ## 目录
 

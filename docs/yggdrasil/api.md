@@ -1,10 +1,18 @@
 # 材质和扩展 API端点
 
+## 目录
+
+- [端点：/yggdrasil/api](#端点yggdrasilapi)
+  - [按名称批量查询角色](#按名称批量查询角色)
+  - [材质上传](#材质上传)
+- [端点：/yggdrasil](#端点yggdrasil)
+  - [API 元数据获取](#api-元数据获取)
+
 ## 端点：/yggdrasil/api
 
 ### 按名称批量查询角色
 
-`POST /api/profiles/minecraft`
+`POST /yggdrasil/api/profiles/minecraft`
 
 批量查询角色名称所对应的角色。
 
@@ -33,8 +41,8 @@
 ### 材质上传
 
 ```
-PUT /api/user/profile/{uuid}/{textureType}
-DELETE /api/user/profile/{uuid}/{textureType}
+PUT /yggdrasil/api/user/profile/{uuid}/{textureType}
+DELETE /yggdrasil/api/user/profile/{uuid}/{textureType}
 ```
 
 设置或清除指定角色的材质。
@@ -73,7 +81,7 @@ DELETE /api/user/profile/{uuid}/{textureType}
 
 ### API 元数据获取
 
-`GET /`
+`GET /yggdrasil/`
 
 响应格式：
 ```json5
