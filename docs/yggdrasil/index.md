@@ -1,6 +1,10 @@
 # 端点：/yggdrasil
 
-本端点为 [Yggdrasil-服务端技术规范](https://yushijinhun.github.io/authlib-injector/zh/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83.html) 的项目化实现，凡是兼容此规范的应用均能兼容本规范。
+本端点为 [Yggdrasil-服务端技术规范](https://yushijinhun.github.io/authlib-injector/zh/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83.html) 
+的项目化实现，凡是兼容此规范的应用均能兼容本规范。  
+因此本目录下所有url路径、请求格式和相应格式都是不变的。
+
+注意：本目录下所有端点均独立于其他端点，如和其他端点冲突，请以本目录文件为准。/yggdrasil 下所有端点不设 Cookie 身份验证，不设人机验证。
 
 ## 错误信息格式 (完全参考Yggdrasil-服务端技术规范)
 

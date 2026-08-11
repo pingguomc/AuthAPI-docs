@@ -1,4 +1,4 @@
-# 端点：/authserver
+# 端点：/yggdrasil/authserver
 
 对应 [Yggdrasil-服务端技术规范 - 用户部分](https://yushijinhun.github.io/authlib-injector/zh/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83.html#%E7%94%A8%E6%88%B7%E9%83%A8%E5%88%86)。
 
