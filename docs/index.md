@@ -73,12 +73,12 @@ Http 状态码按通用约定返回。
 
 `GET /`
 
-**请求**：无请求体和请求体。
+**请求**：无请求体和请求头。
 
 **响应**：添加响应头 `X-Authlib-Injector-API-Location` ，值为 `/yggdrasil/`。
 ```json5
 {
-  "staus": "normal", // 若为 normal 则前端正常提供服务，若为 maintenance，前端停止一切服务并展示维护页。
+  "status": "normal", // 若为 normal 则前端正常提供服务，若为 maintenance，前端停止一切服务并展示维护页。
   "feature": {  //功能
     "email_register": true, //当前是否开启邮箱注册
     "email_login": true, //当前是否开启邮箱登录

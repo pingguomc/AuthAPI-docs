@@ -7,6 +7,16 @@
   - [材质上传](#材质上传)
 - [端点：/yggdrasil](#端点yggdrasil)
   - [API 元数据获取](#api-元数据获取)
+  - [端点：/yggdrasil/launcher-sessions](#端点yggdrasillauncher-sessions)
+    - [创建启动器会话 (cookie身份验证)](#创建启动器会话-cookie身份验证)
+    - [获取启动器会话列表 (cookie身份验证)](#获取启动器会话列表-cookie身份验证)
+    - [获取启动器会话信息 (cookie身份验证)](#获取启动器会话信息-cookie身份验证)
+    - [删除启动器会话 (cookie身份验证)](#删除启动器会话-cookie身份验证)
+  - [端点：/yggdrasil/profiles](#端点yggdrasilprofiles)
+    - [创建角色 (cookie身份验证)](#创建角色-cookie身份验证)
+    - [获取角色列表 (cookie身份验证)](#获取角色列表-cookie身份验证)
+    - [获取角色信息](#获取角色信息)
+    - [删除角色 (cookie身份验证)](#删除角色-cookie身份验证)
 
 ## 端点：/yggdrasil/api
 
@@ -47,7 +57,7 @@ DELETE /yggdrasil/api/user/profile/{uuid}/{textureType}
 
 设置或清除指定角色的材质。
 
-> 并非所有角色都可以上传皮肤和披风。要获取当前角色能够上传的材质类型，参见 [`uploadableTextures` 可上传的材质类型](./index.md#uploadableTextures-可上传的材质类型)。
+> 并非所有角色都可以上传皮肤和披风。要获取当前角色能够上传的材质类型，参见 [`uploadableTextures` 可上传的材质类型](./index.md#uploadabletextures-可上传的材质类型)。
 
 **请求**：
 

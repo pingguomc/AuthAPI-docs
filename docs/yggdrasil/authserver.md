@@ -71,7 +71,7 @@
       ]
     },
     "user":{
-        // ... 启动器会话信息（仅当请求中 requestUser 为 true 时包含，格式见 启动器会话信息的序列化）
+        // ... 启动器会话信息（仅当请求中 requestUser 为 true 时包含，格式见 §启动器会话信息的序列化）
         // 下面是示例
       "id":" ID（启动器会话ID）",
       "properties":[ // 属性（数组，每一元素为一个属性。可不包含任何属性，即为空数组。）
@@ -102,10 +102,7 @@ API 元数据中的 feature.non_email_login 字段实际上无效。（见 API �
 {
     "accessToken":"令牌的 accessToken",
     "clientToken":"令牌的 clientToken（可选）",
-    "requestUser":false, // 是否在响应中包含用户信息->启动器会话信息，默认 false
-    "selectedProfile":{
-        // ... 要选择的角色（可选，格式见 §角色信息的序列化）
-    }
+    "requestUser":false // 是否在响应中包含用户信息（启动器会话信息），默认 false
 }
 ```
 
@@ -113,7 +110,7 @@ API 元数据中的 feature.non_email_login 字段实际上无效。（见 API �
 
 颁发的新令牌的 `clientToken` 应与原令牌的相同。
 
-如果请求中包含 `selectedProfile`，那么这就是一个选择角色的操作。此操作要求原令牌所绑定的角色为空，而新令牌则将绑定到 `selectedProfile` 所指定的角色上。如果不包含 `selectedProfile`，那么新令牌所绑定的角色和原令牌相同。
+请求中不包含 `selectedProfile`。新令牌所绑定的角色与原令牌相同（即该启动器会话绑定的角色）。
 
 刷新操作在令牌暂时失效时依然可以执行。若请求失败，原令牌依然有效。
 
@@ -123,10 +120,10 @@ API 元数据中的 feature.non_email_login 字段实际上无效。（见 API �
     "accessToken":"新令牌的 accessToken",
     "clientToken":"新令牌的 clientToken",
     "selectedProfile":{
-        // ... 新令牌绑定的角色，若为空，则不需要包含（格式见 §角色信息的序列化）
+        // ... 新令牌绑定的角色（格式见 §角色信息的序列化）。此项不得为空。
     },
     "user":{
-        // ... 用户信息->启动器会话信息（仅当请求中 requestUser 为 true 时包含，格式见 §用户信息的序列化 ——> 启动器会话信息的序列化）
+        // ... 启动器会话信息（仅当请求中 requestUser 为 true 时包含，格式见 §启动器会话信息的序列化）
     }
 }
 ```

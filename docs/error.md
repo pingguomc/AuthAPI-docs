@@ -8,16 +8,16 @@
 | **400** |        `CaptchaMissing`      | 该操作需要人机验证，请完成验证                   | 所有受人机验证保护的端点                                                                                               |
 | **400** |      `EmailCodeExpired`       | 邮箱验证码已过期，请重新获取                    | `POST /user/change-password`、`PUT /user/email`                                                             |
 | **400** |      `EmailMismatch`        | 邮箱与发验证码时不一致                       | `PUT /user/email`、`POST /email/code/set-email`                                            |
-| **400** |       `IdTokenInvalid`        | 登录凭证校验失败，请重试                      | `GET /user/oidc/{providerId}/callback`                                                                     |
+| **302** |       `IdTokenInvalid`        | 登录凭证校验失败，请重试                      | `GET /user/oidc/{providerId}/callback`                                                                     |
 | **400** |     `InvalidDisplayName`      | 显示名称格式不正确                         | `POST /user/register`                                                                                      |
 | **400** |        `InvalidEmail`         | 邮箱格式不正确                           | `POST /user/register`、`POST /email/code/*`                                                                 |
 | **400** |      `InvalidEmailCode`       | 邮箱验证码错误                           | `POST /user/register`、`POST /user/change-password`、`PUT /user/email`                                       |
 | **400** |       `InvalidRequest`        | 请求格式错误，请检查参数                      | 所有端点                                                                                                       |
 | **400** |       `LastLoginMethod`       | 这是唯一的登录方式，不可解绑，请先绑定邮箱或其他 OIDC 提供商 | `DELETE /user/oidc/{providerId}`                                                                           |
-| **400** |       `ProviderDenied`        | 用户取消了授权                           | `GET /user/oidc/{providerId}/callback`                                                                     |
+| **302** |       `ProviderDenied`        | 用户取消了授权                           | `GET /user/oidc/{providerId}/callback`                                                                     |
 | **400** |        `SamePassword`         | 新密码不能与旧密码相同                       | `POST /user/change-password`                                                                               |
-| **400** |        `StateMismatch`        | 安全校验失败，请重试                        | `GET /user/oidc/{providerId}/callback`                                                                     |
-| **400** |     `TokenExchangeFailed`     | 登录失败，请重试                          | `GET /user/oidc/{providerId}/callback`                                                                     |
+| **302** |        `StateMismatch`        | 安全校验失败，请重试                        | `GET /user/oidc/{providerId}/callback`                                                                     |
+| **302** |     `TokenExchangeFailed`     | 登录失败，请重试                          | `GET /user/oidc/{providerId}/callback`                                                                     |
 | **400** |        `WeakPassword`         | 密码强度不足，需包含字母和数字且不少于6位             | `POST /user/register`、`POST /user/change-password`                                                         |
 | **401** |     `InvalidCredentials`      | 邮箱或密码错误（或邮箱或验证码错误）                | `POST /user/login`                                                                                         |
 | **401** |        `Unauthorized`         | 请先登录                              | 所有需要 Cookie 身份验证的端点                                                                                        |
@@ -40,3 +40,5 @@
 | **429** |         `RateLimited`         | 操作过于频繁，请稍后再试                      | 所有端点（通用限流）                                                                                                 |
 | **500** |        `InternalError`        | 服务器内部错误，请稍后重试                     | 所有端点                                                                                                       |
 | **503** | `CaptchaServiceUnavailable` | 人机验证服务暂不可用，请稍后重试                  | 所有受人机验证保护的端点                                                                                               |
+
+> 标注为 **`302`** 的 OIDC callback 错误并非 JSON 错误体，而是以 `302` 重定向跳转至前端回调页，并在 URL 查询参数中携带 `status=error`、`error`（错误码）与 `errorMessage`（URL 编码的人类可读描述）。详见 [GET /user/oidc/{providerId}/callback](./user.md#get-useroidcprovideridcallback)。
