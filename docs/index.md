@@ -59,9 +59,34 @@ Http 状态码按通用约定返回。
 | Max-Age  | 86400（示例） | 24 小时过期（示例） |
 
 
-## 数据库表结构约定
+## 数据模型
 
+### 账号-User
+
+### OIDC记录-OidcRecord
+
+### 封禁记录-Ban
+
+### 审计日志-AuditLog
+
+## 根目录数据
+
+`GET /`
+
+**请求**：无请求体和请求体。
+
+**响应**：添加响应头 `X-Authlib-Injector-API-Location` ，值为 `/yggdrasil/`。
+```json5
+{
+  "staus": "normal", // 若为 normal 则前端正常提供服务，若为 maintenance，前端停止一切服务并展示维护页。
+  "feature": {  //功能
+    "email_register": true, //当前是否开启邮箱注册
+    "email_login": true, //当前是否开启邮箱登录
+    "find_oidc": true, //当前是否开启 OIDC （若开启，前端再访问/user/oidc/providers）
+    "find_captcha": true //当前是否开启人机验证 （若开启，前端再访问/captcha/config）
+  },
+  "motd": "Message of the Day"
+}
+```
 
 ## 其他
-
-在根目录页面 `/` 添加响应头 `X-Authlib-Injector-API-Location` ，值为 `/yggdrasil/`。

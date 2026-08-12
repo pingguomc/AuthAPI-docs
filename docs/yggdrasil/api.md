@@ -139,7 +139,7 @@ Minecraft 仅会从白名单中的域名下载材质。如果材质 URL 的域�
 
 | Key                                    | Value                                                                                                                                                                                                                                                                      |
 |----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| feature.non\_email\_login              | 布尔值，指示验证服务器是否支持使用邮箱之外的凭证登录（如角色名登录），默认为 false。<br>详情见 [§使用角色名称登录](#使用角色名称登录)。                                                                                                                                                                                               |
+| feature.non\_email\_login              | 布尔值，指示验证服务器是否支持使用邮箱之外的凭证登录（如角色名登录），默认为 false。<br>在本项目中此项实际上无效。                                                                                                                                                                                  |
 | feature.legacy\_skin\_api              | _(advanced)_ 布尔值，指示验证服务器是否支持旧式皮肤 API，即 `GET /skins/MinecraftSkins/{username}.png`。<br>当未指定或值为 false 时，authlib-injector 会使用内建的 HTTP 服务器在本地处理对该 API 的请求；若值为 true，请求将由验证服务器处理。<br>详情见 [README § 参数] 中的 `-Dauthlibinjector.legacySkinPolyfill` 选项。                             |
 | feature.no\_mojang\_namespace          | _(advanced)_ 布尔值，是否禁用 authlib-injector 的 Mojang 命名空间（@mojang 后缀）功能，默认为 false。<br>详情见 [README § 参数] 中的 `-Dauthlibinjector.mojangNamespace` 选项。                                                                                                                              |
 | feature.enable\_mojang\_anti\_features | _(advanced)_ 布尔值，是否开启 Minecraft 的 anti-features，默认为 false。<br>详情见 [README § 参数] 中的 `-Dauthlibinjector.mojangAntiFeatures` 选项。                                                                                                                                              |
@@ -169,4 +169,147 @@ Minecraft 仅会从白名单中的域名下载材质。如果材质 URL 的域�
 }
 ```
 
+### 端点：/yggdrasil/launcher-sessions
 
+#### 创建启动器会话 (cookie身份验证)
+
+`POST /yggdrasil/launcher-sessions`
+
+**请求**：账号（启动器会话所有者）身份验证通过 Cookie 进行。
+
+```json5
+{
+  "selectedProfileID": "角色 UUID（无符号）" // 必须是当前账号所拥有的角色，启动器会话生成就会绑定到这个角色。 
+}
+```
+
+**响应**：
+```json5
+{
+  "id":"ID（启动器会话ID）",
+  "username":"即为启动器会话登录名",
+  "password":"即为启动器会话认证凭据",
+  "selectedProfile":{
+    // ... 绑定的角色（格式见 §角色信息的序列化）。此项不得为空。
+    "id":"角色 UUID（无符号）",
+    "name":"角色名称",
+    "properties":[ // 角色的属性（数组，每一元素为一个属性）（仅在特定情况下需要包含）
+      { // 一项属性
+        "name":"属性的名称",
+        "value":"属性的值",
+        "signature":"属性值的数字签名（仅在特定情况下需要包含）"
+      }
+      // ,...（可以有更多）
+    ]
+  },
+  "properties":[ // 属性（数组，每一元素为一个属性。可不包含任何属性，即为空数组。）
+    { // 用户偏好语言（可选）
+      "name":"preferredLanguage",
+      "value":"zh_CN",
+    }
+  ]
+}
+```
+
+**备注**：
+* 每个账号能创建启动器会话的数量应该是有限并且可配置的，默认配置为 3。
+* `启动器会话ID` 使用随机生成（Version 4）。
+* `启动器会话登录名` 可以通过配置文件更改生成方式：`8位随机短无符号UUID` 或 `"用户 displayName" + "__" + "角色名"`。eg: "pingguomc__pingguomc"，默认第一种。
+* `即为启动器会话认证凭据` 为 `固定长度随机无符号UUID`，可以通过配置文件更改长度（6-12），默认 6。
+
+#### 获取启动器会话列表 (cookie身份验证)
+
+`GET /yggdrasil/launcher-sessions`
+
+**请求**：无请求体，通过 cookie 确认账号身份。
+
+**响应**：不分页
+```json5
+{
+  "total": 1, // 总计数量
+  "launcherSessions": [
+    {
+      "id":" ID（启动器会话ID）",
+      "username":"即为启动器会话登录名"
+    },
+    {
+      // 同上
+    }
+  ]
+}
+```
+
+#### 获取启动器会话信息 (cookie身份验证)
+
+`GET /yggdrasil/launcher-sessions/{launcherSessionID}`
+
+**请求**：无请求体，此端点仅能查询本 cookie 账号拥有的启动器会话。试图查询其他人的则返回 `403`。
+
+**响应**：与 [创建启动器会话 (cookie身份验证)](#创建启动器会话-cookie身份验证) 的响应完全一致。
+
+#### 删除启动器会话 (cookie身份验证)
+
+`DELETE /yggdrasil/launcher-sessions/{launcherSessionID}`
+
+**请求**：无请求体，此端点仅能删除本 cookie 账号拥有的启动器会话。试图删除其他人的则返回 `403`。
+
+**响应**：成功返回 `204`。后端应该删除与此启动器会话关联的全部 [令牌](index.md#令牌token)
+
+### 端点：/yggdrasil/profiles
+
+#### 创建角色 (cookie身份验证)
+
+`POST /yggdrasil/profiles`
+
+**请求**：账号（角色所有者）身份验证通过 Cookie 进行。
+```json5
+{
+  "name":"角色名称"
+}
+```
+
+**响应**：
+```json5
+{
+  "id":"角色 UUID（无符号）",
+  "name":"角色名称"
+}
+```
+
+**备注**：UUID 和名称均为全局唯一。每个账号能创建角色的数量应该是有限并且可配置的，默认配置为 2。
+
+#### 获取角色列表 (cookie身份验证)
+
+`GET /yggdrasil/profiles`
+
+**请求**：无请求体，通过 cookie 确认账号身份。
+
+**响应**：不分页
+```json5
+{
+  "total": 1, // 总计数量
+  "profiles": [
+    {
+      "id":"角色 UUID（无符号）",
+      "name":"角色名称",
+    },
+    {
+      // 其他
+    }
+  ]
+}
+```
+
+#### 获取角色信息
+
+使用 [端点：/yggdrasil/sessionserver-角色部分-查询角色属性](sessionserver.md#查询角色属性)。
+
+#### 删除角色 (cookie身份验证)
+
+`DELETE /yggdrasil/profiles/{id}`
+
+**请求**：无请求体，此端点仅能删除本 cookie 账号拥有的角色。试图删除其他人的则返回 `403`。
+
+**响应**：成功返回 `204`。
+
+**备注**：删除之后，绑定在本角色的启动器会话和令牌均自动失效。
