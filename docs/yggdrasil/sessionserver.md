@@ -12,6 +12,8 @@
 
 ## 会话部分
 
+提示：**前端无需实现本部分内容**。
+
 1. 服务端向待进服的玩家发送 serverId，其可以被视为一个随机的字符串。
 2. 客户端将该 serverId 连同自己的 accessToken 发送给 Yggdrasil 端，请求验证。
 3. 服务端将 serverId 及玩家的名字发送给 Yggdrasil 端，查询玩家是否已完成验证。

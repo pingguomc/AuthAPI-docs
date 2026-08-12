@@ -10,7 +10,7 @@
 - [吊销令牌](#吊销令牌)
 - [登出](#登出)
 
-## 登录 
+## 登录
 
 `POST /yggdrasil/authserver/authenticate`
 
