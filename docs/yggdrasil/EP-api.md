@@ -17,6 +17,7 @@
     - [获取角色列表 (cookie身份验证)](#获取角色列表-cookie身份验证)
     - [获取角色信息](#获取角色信息)
     - [删除角色 (cookie身份验证)](#删除角色-cookie身份验证)
+    - [前端专用上传和删除材质 (cookie身份验证) 【不稳定】](#前端专用上传和删除材质-cookie身份验证-不稳定)
 
 ## 端点：/yggdrasil/api
 
@@ -66,7 +67,8 @@ DELETE /yggdrasil/api/user/profile/{uuid}/{textureType}
 | uuid        | 角色的 UUID（无符号）                   |
 | textureType | 材质类型，可以为 `skin`（皮肤）或 `cape`（披风） |
 
-请求需要带上 HTTP 头部 `Authorization: Bearer {accessToken}` 进行认证。若未包含 Authorization 头或 accessToken 无效，则返回 `401 Unauthorized`。
+请求需要带上 HTTP 头部 `Authorization: Bearer {accessToken}` 进行认证。若未包含 Authorization 头或 accessToken 无效，则返回 `401 Unauthorized`。  
+注意：被设置或清除的角色，必须是 accessToken 所绑定的角色，否则视为 accessToken 无效。
 
 如果操作成功，则返回 `204 No Content`。
 
@@ -149,7 +151,7 @@ Minecraft 仅会从白名单中的域名下载材质。如果材质 URL 的域�
 
 | Key                                    | Value                                                                                                                                                                                                                                                                      |
 |----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| feature.non\_email\_login              | 布尔值，指示验证服务器是否支持使用邮箱之外的凭证登录（如角色名登录），默认为 false。<br>在本项目中此项实际上无效。                                                                                                                                                                                  |
+| feature.non\_email\_login              | 布尔值，指示验证服务器是否支持使用邮箱之外的凭证登录（如角色名登录），默认为 false。<br>在本项目中此项实际上无效。                                                                                                                                                                                                             |
 | feature.legacy\_skin\_api              | _(advanced)_ 布尔值，指示验证服务器是否支持旧式皮肤 API，即 `GET /skins/MinecraftSkins/{username}.png`。<br>当未指定或值为 false 时，authlib-injector 会使用内建的 HTTP 服务器在本地处理对该 API 的请求；若值为 true，请求将由验证服务器处理。<br>详情见 [README § 参数] 中的 `-Dauthlibinjector.legacySkinPolyfill` 选项。                             |
 | feature.no\_mojang\_namespace          | _(advanced)_ 布尔值，是否禁用 authlib-injector 的 Mojang 命名空间（@mojang 后缀）功能，默认为 false。<br>详情见 [README § 参数] 中的 `-Dauthlibinjector.mojangNamespace` 选项。                                                                                                                              |
 | feature.enable\_mojang\_anti\_features | _(advanced)_ 布尔值，是否开启 Minecraft 的 anti-features，默认为 false。<br>详情见 [README § 参数] 中的 `-Dauthlibinjector.mojangAntiFeatures` 选项。                                                                                                                                              |
@@ -312,7 +314,7 @@ Minecraft 仅会从白名单中的域名下载材质。如果材质 URL 的域�
 
 #### 获取角色信息
 
-使用 [端点：/yggdrasil/sessionserver-角色部分-查询角色属性](sessionserver.md#查询角色属性)。
+使用 [端点：/yggdrasil/sessionserver-角色部分-查询角色属性](EP-sessionserver.md#查询角色属性)。
 
 #### 删除角色 (cookie身份验证)
 
@@ -323,3 +325,44 @@ Minecraft 仅会从白名单中的域名下载材质。如果材质 URL 的域�
 **响应**：成功返回 `204`。
 
 **备注**：删除之后，绑定在本角色的启动器会话和令牌均自动失效。
+
+
+#### 前端专用上传和删除材质 (cookie身份验证) 【不稳定】
+
+```
+PUT /yggdrasil/profiles/{uuid}/{textureType}
+DELETE /yggdrasil/profiles/{uuid}/{textureType}
+```
+
+设置或清除指定角色的材质，专门给前端调用。
+
+> 并非所有角色都可以上传皮肤和披风。要获取当前角色能够上传的材质类型，参见 [`uploadableTextures` 可上传的材质类型](./index.md#uploadabletextures-可上传的材质类型)。
+
+**请求**：
+
+| 参数          | 值                               |
+|-------------|---------------------------------|
+| uuid        | 角色的 UUID（无符号）                   |
+| textureType | 材质类型，可以为 `skin`（皮肤）或 `cape`（披风） |
+
+请求需要带上 Cookie 进行认证。若未包含，则返回 `401`，若试图操作不属于他的角色，返回 `403` 。
+
+如果操作成功，则返回 `204 No Content`。
+
+下面分别介绍 PUT 和 DELETE 这两个 HTTP 方法的用法：
+
+#### PUT 上传材质
+
+请求的 `Content-Type` 为 `multipart/form-data`，请求载荷由以下部分组成：
+
+| 名称（name） | 内容                                                                                                               |
+|----------|------------------------------------------------------------------------------------------------------------------|
+| model    | **（仅用于皮肤）** 皮肤的材质模型，可以为 `slim`（细胳膊皮肤）或空字符串（普通皮肤）。                                                                |
+| file     | 材质图像，`Content-Type` 须为 `image/png`。<br>建议设置 `Content-Disposition` 中的 `filename` 参数为材质图像的文件名，这可以被验证服务器用作材质的备注。 |
+
+如果操作成功，则返回 `204 No Content`。
+
+#### DELETE 清除材质
+
+清除材质后，该类型的材质将恢复为默认。
+

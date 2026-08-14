@@ -6,18 +6,19 @@
 
 ### 主端点
 
-- [user 端点](./user.md)
-- [email 端点](./email.md)
-- [admin 端点](./admin.md)
-- [captcha 端点](./captcha.md)
+- [user 端点](EP-user.md)
+- [email 端点](EP-email.md)
+- [admin 端点](EP-admin.md)
+- [captcha 端点](EP-captcha.md)
 - [错误码速查表](./error.md)
+- [数据库表结构（SQL）](./SQL.md)
 
 ### Yggdrasil 相关
 
 - [Yggdrasil 入口](./yggdrasil/index.md)
-- [材质和扩展 API](./yggdrasil/api.md)
-- [authserver（用户部分）](./yggdrasil/authserver.md)
-- [sessionserver（会话与角色）](./yggdrasil/sessionserver.md)
+- [材质和扩展 API](yggdrasil/EP-api.md)
+- [authserver（用户部分）](yggdrasil/EP-authserver.md)
+- [sessionserver（会话与角色）](yggdrasil/EP-sessionserver.md)
 - [签名密钥对](./yggdrasil/signature.md)
 
 ## 技术约定
@@ -57,17 +58,6 @@ Http 状态码按通用约定返回。
 | SameSite |    Lax    | 防 CSRF      |
 |   Path   |     /     |             |
 | Max-Age  | 86400（示例） | 24 小时过期（示例） |
-
-
-## 数据模型
-
-### 账号-User
-
-### OIDC记录-OidcRecord
-
-### 封禁记录-Ban
-
-### 审计日志-AuditLog
 
 ## 根目录数据
 

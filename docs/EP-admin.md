@@ -1,4 +1,4 @@
-# 端点：/admin
+# 端点：/admin 【废弃】
 
 管理端点。本端点全部需要身份验证,采用 [Cookie HttpOnly 会话](./index.md#cookie-格式)。
 
@@ -117,7 +117,7 @@
   "lastLoginIp": "203.0.113.1",
   "registerIp": "203.0.113.1",
   "createdAt": "2026-08-08T10:30:00Z",
-  "oidcBindings": [  //参见 ./user.md#端点useroidc
+  "oidcBindings": [  //参见 ./EP-user.md#端点useroidc
     {
       "providerId": "github",
       "boundAt": "2026-08-08T10:30:00Z"
@@ -248,7 +248,7 @@
 }
 ```
 
-**备注**: 会话清除同时也是封禁、角色变更的副作用,以及用户自行 [修改密码](./user.md#post-userchange-password-cookie身份验证) 的副作用。**仅通过本接口显式发起的清除** 才产生 `user.session_revoke` 审计记录,作为副作用触发的不重复记录。
+**备注**: 会话清除同时也是封禁、角色变更的副作用,以及用户自行 [修改密码](EP-user.md#post-userchange-password-cookie身份验证) 的副作用。**仅通过本接口显式发起的清除** 才产生 `user.session_revoke` 审计记录,作为副作用触发的不重复记录。
 
 ## POST /admin/role-grants/{userId} (下个版本废弃)
 

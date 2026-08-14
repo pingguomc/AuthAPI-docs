@@ -41,4 +41,4 @@
 | **500** |        `InternalError`        | 服务器内部错误，请稍后重试                     | 所有端点                                                                                                       |
 | **503** | `CaptchaServiceUnavailable` | 人机验证服务暂不可用，请稍后重试                  | 所有受人机验证保护的端点                                                                                               |
 
-> 标注为 **`302`** 的 OIDC callback 错误并非 JSON 错误体，而是以 `302` 重定向跳转至前端回调页，并在 URL 查询参数中携带 `status=error`、`error`（错误码）与 `errorMessage`（URL 编码的人类可读描述）。详见 [GET /user/oidc/{providerId}/callback](./user.md#get-useroidcprovideridcallback)。
+> 标注为 **`302`** 的 OIDC callback 错误并非 JSON 错误体，而是以 `302` 重定向跳转至前端回调页，并在 URL 查询参数中携带 `status=error`、`error`（错误码）与 `errorMessage`（URL 编码的人类可读描述）。详见 [GET /user/oidc/{providerId}/callback](EP-user.md#get-useroidcprovideridcallback)。

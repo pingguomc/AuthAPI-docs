@@ -72,7 +72,7 @@
 ```json5
 {
   "userId": "be081dbc-3de9-4138-9e13-3cbc5439dd4a", // 随机示例
-  "role": "user", // 角色,取值参考 admin.md 数据模型
+  "role": "user", // 角色,取值参考 EP-admin.md 数据模型
   "displayName": "展示的用户名",
   "email": "绑定的邮箱", // 可能为空字符串
   "hasPassword": false, // 是否已设置密码
@@ -179,19 +179,20 @@ OIDC 相关的用户操作端点。
 
 通过指定的授权服务器登录或注册。
 
-**请求**： 请求体为空  
+**请求**： 请求体为空
 可选查询参数：
 
 | 参数           | 说明                             |
 |--------------|--------------------------------|
-| redirect_uri | 登录成功后跳回的前端页面地址（可选，后端有默认配置时可省略） |
+| redirect_uri | 登录成功后跳回的前端页面地址（可选，须在白名单内；未传时使用后端配置的默认跳转地址） |
 
 **后端处理**：
 1. 生成随机 `state`，存入 session
 2. 生成随机 `code_verifier`（43~128 字符），存入 session
 3. 计算 `code_challenge = base64url(sha256(code_verifier))`
 4. 在 session 中标记 `action = "login"`
-5. 若前端传了 `redirect_uri`，存入 session 作为回调后的跳转目标
+5. 若前端传了 `redirect_uri`，校验其必须命中 `config/OIDC.toml` 的 `allowed_redirect_uris` 白名单（否则 403 拒绝发起流程）；将生效的跳转地址存入 session 作为回调后的跳转目标。未传时使用 `default_redirect_uri`（未配置则回调回退到根路径 `/`）
+   - 白名单匹配比较 `scheme + host:port + path`，**忽略 query 与 fragment**，因此可在 `redirect_uri` 中携带 `after` 等查询参数（例如传入 `http://localhost:5173/oidc/callback?after=/dashboard` 时，配置 `http://localhost:5173/oidc/callback` 即可命中）
 6. 构造 Provider 授权 URL，附加 `code_challenge` 和 `code_challenge_method=S256`，302 重定向
 
 **响应**：若成功，则 `302` 重定向至指定的 Provider （ Authorization Server ）的授权页。前端应通过新窗口或直接跳转的方式访问此端点。
@@ -200,12 +201,12 @@ OIDC 相关的用户操作端点。
 
 在已登录的情况下绑定新授权服务商。
 
-**请求**：凭据通过 Cookie 传递，请求体为空。  
+**请求**：凭据通过 Cookie 传递，请求体为空。
 可选查询参数：
 
 | 参数             | 说明                 |
 |----------------|--------------------|
-| `redirect_uri` | 绑定成功后跳回的前端页面地址（可选） |
+| `redirect_uri` | 绑定成功后跳回的前端页面地址（可选，须在白名单内） |
 
 **后端处理**：
 1. 校验用户已登录
@@ -213,7 +214,7 @@ OIDC 相关的用户操作端点。
 3. 生成随机 `code_verifier`（43~128 字符），存入 session
 4. 计算 `code_challenge = base64url(sha256(code_verifier))`
 5. 在 session 中标记 `action = "bind"`
-6. 若前端传了 `redirect_uri`，存入 session 作为回调后的跳转目标
+6. 若前端传了 `redirect_uri`，校验其必须命中 `allowed_redirect_uris` 白名单（否则 403 拒绝）；将生效的跳转地址存入 session 作为回调后的跳转目标。未传时使用 `default_redirect_uri`（未配置则回退到根路径 `/`）。匹配规则同 authorize（比较 `scheme + host:port + path`，忽略 query）
 7. 构造 Provider 授权 URL，附加 `code_challenge` 和 `code_challenge_method=S256`，302 重定向
 
 **响应**：与 `/authorize` 相同，`302` 重定向至 Provider 授权页。
@@ -242,7 +243,9 @@ OIDC 相关的用户操作端点。
 6. 根据 session 中的 `action` 决定：
     - `login`：创建或匹配本地用户，建立本地 session（`Set-Cookie`）
     - `bind`：校验用户已登录，将 Provider 账号关联到当前用户（若该 Provider 账号已被其他用户绑定，返回错误；若当前用户已绑定该 Provider，视为幂等，直接成功）
-7. 从 session 取出 `redirect_uri`（若前端传了），302 重定向至该地址
+7. 从 session 取出生效的跳转地址（授权时存入：传入且命中白名单 → 使用它；未传 → 使用 `default_redirect_uri`；均无 → 根路径 `/`），302 重定向至该地址。
+
+> **说明**：跳转地址优先取授权时存入 session 的值。若 `state` 缺失/过期（流程上下文不可还原），则直接回退到 `default_redirect_uri`（未配置则根路径 `/`）。
 
 **响应（重定向到前端时）**：
 成功：302 跳转到前端回调页。登录时通过 `Set-Cookie` 建立会话；绑定时无需额外操作。

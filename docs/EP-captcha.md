@@ -106,10 +106,10 @@ X-Captcha-Config-Version: 42
 
 |                  动作标识 | 对应端点                                                           |
 |----------------------:|----------------------------------------------------------------|
-|            `register` | [POST /user/register](./user.md#post-userregister)             |
-|               `login` | [POST /user/login](./user.md#post-userlogin)                   |
-| `email-code-register` | [POST /email/code/register](./email.md#post-emailcoderegister) |
-|    `email-code-login` | [POST /email/code/login](./email.md#post-emailcodelogin)       |
+|            `register` | [POST /user/register](EP-user.md#post-userregister)             |
+|               `login` | [POST /user/login](EP-user.md#post-userlogin)                   |
+| `email-code-register` | [POST /email/code/register](EP-email.md#post-emailcoderegister-人机验证) |
+|    `email-code-login` | [POST /email/code/login](EP-email.md#post-emailcodelogin-人机验证)       |
 
 **备注**:
 * `/email/code/*` 是最需要保护的一组端点(邮件轰炸)，建议始终开启。
