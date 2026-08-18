@@ -27,6 +27,8 @@
 | identity-groups 读取 | `admin`（任意级别） |
 | notifications（发站内通知） | `admin`（任意级别） |
 | announcements（发全站公告） | `super_admin` |
+| labels（标签建/删，系统角色 Admin） | `admin`（任意级别） |
+| prefixes（前缀预设建/删） | `super_admin` |
 | reload（配置热重载） | `super_admin` |
 | audit-logs（后台审计） | `admin`（任意级别） |
 
@@ -42,6 +44,8 @@
 - [通知与公告](#通知与公告)
   - [POST /management/console/notifications](#post-managementconsolenotifications)
   - [POST /management/console/announcements](#post-managementconsoleannouncements)
+- [标签管理](#标签管理)
+- [前缀管理](#前缀管理)
 - [配置热重载](#配置热重载)
   - [POST /management/console/reload](#post-managementconsolereload)
 - [后台审计日志](#后台审计日志)
@@ -303,6 +307,102 @@
   "publishedAt": "2026-08-08T10:30:00Z"
 }
 ```
+
+---
+## 标签管理
+
+Issue 标签的创建 / 删除由系统角色 `Admin` 完成；分配标签给议题及打开 / 关闭议题见 [/management](../index.md#issue-管理)。
+
+### GET /management/console/labels
+
+标签列表。
+
+**权限**：后台级别 `admin`（含 `super_admin`）。
+
+**响应**：`200`：
+
+```json5
+{
+  "labels": [ { "id": "l_01H...", "name": "bug", "color": "#dd3a0a" } ]
+}
+```
+
+### POST /management/console/labels
+
+创建标签。
+
+**权限**：系统角色 `Admin`。
+
+**请求**：
+
+```json5
+{
+  "name": "bug", // 唯一
+  "color": "#dd3a0a" // 可选，默认 #000000
+}
+```
+
+**响应**：`201`，返回标签对象。
+
+**备注**：名称已存在返回 `409`，`error` 为 `LabelNameTaken`。
+
+### DELETE /management/console/labels/{labelId}
+
+删除标签（并解除其与所有议题的关联）。
+
+**权限**：系统角色 `Admin`。
+
+**响应**：`204`。
+
+**备注**：不存在返回 `404`，`error` 为 `LabelNotFound`。
+
+---
+
+## 前缀管理
+
+前缀预设由后台 SuperAdmin 维护，版主在 `/management` 为用户分配。
+
+### GET /management/console/prefixes
+
+前缀预设列表。
+
+**权限**：后台级别 `super_admin`。
+
+**响应**：`200`：
+
+```json5
+{
+  "prefixes": [ { "id": "p_01H...", "value": "[VIP]" } ]
+}
+```
+
+### POST /management/console/prefixes
+
+创建前缀预设。
+
+**权限**：后台级别 `super_admin`。
+
+**请求**：
+
+```json5
+{
+  "value": "[VIP]"
+}
+```
+
+**响应**：`201`，返回前缀对象。
+
+**备注**：值已存在返回 `409`，`error` 为 `PrefixTaken`。
+
+### DELETE /management/console/prefixes/{prefixId}
+
+删除前缀预设（已分配该前缀的用户其 `users.prefix` 会被清除）。
+
+**权限**：后台级别 `super_admin`。
+
+**响应**：`204`。
+
+**备注**：不存在返回 `404`，`error` 为 `PrefixNotFound`。
 
 ---
 

@@ -21,7 +21,7 @@
 | username      | 唯一，不为空，默认 `user_它的id` | 展示用用户名（对外直接展示它） |
 | display_name  | 可为空               | 仅保留字段，当前展示一律用 `username` |
 | role          | 枚举 `user`/`helper`/`moderator`/`admin`，不为空，默认 `user` | **系统角色（非空）** |
-| prefix        | 可为空               | 显示前缀，可为空 |
+| prefix        | 可为空               | 显示前缀（取自 `prefix_presets`，不可自行设置，由管理维护） |
 | last_login_at | 可为空               | 最后登录时间 |
 | created_at    | 不为空               | 注册时间 |
 | updated_at    | 不为空               | 更新时间 |
@@ -67,6 +67,105 @@
 | granted_at| 不为空                      | 分配时间 |
 
 > `(user_id, group_id)` 复合主键；同一用户同一组仅一条。
+
+## 前缀预设 (prefix_presets)
+
+前缀由系统统一管理：本表为可用前缀清单，后台 SuperAdmin 创建/删除；版主在此清单内为用户分配（`users.prefix`）。
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| id    | 主键 | 随机 UUID |
+| value | NOT NULL，UNIQUE | 前缀字符串，如 `[VIP]` |
+| created_by | 可为空，外键 `users(id)` | 创建者（后台 SuperAdmin） |
+| created_at | 不为空 | |
+
+## 投票 (votes)
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| id         | 主键                | 随机 UUID |
+| title      | 不为空               | 投票标题 |
+| description| 可为空               | 描述 |
+| option_type| NOT NULL，枚举 `single`/`multiple`，默认 `single` | 单选 / 多选 |
+| allow_multiple | NOT NULL，默认 `false` | 是否多选（与 option_type 一致） |
+| start_at   | 可为空              | 开始时间 |
+| end_at     | 不为空              | 结束时间 |
+| created_by | 可为空，外键 `users(id)` | 创建者（版主） |
+| created_at | 不为空              | |
+
+### 投票选项 (vote_options)
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| id      | 主键                | 随机 UUID |
+| vote_id | 不为空，外键 `votes(id)` | 所属投票 |
+| content | 不为空              | 选项内容 |
+| sort_order | 不为空，默认 0   | 排序 |
+
+### 投票记录 (vote_answers)
+
+每个用户对一个投票最多投票一次；多选时一行一个被选选项。
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| id      | 主键                | 随机 UUID |
+| vote_id | 不为空，外键 `votes(id)` | 所属投票 |
+| user_id | 不为空，外键 `users(id)` | 投票用户 |
+| option_id | 不为空，外键 `vote_options(id)` | 被选选项 |
+| created_at | 不为空            | 投票时间 |
+
+> 唯一约束 `(vote_id, user_id, option_id)`；同一用户同一投票同一选项仅一条。
+
+## Issue（议题）
+
+类 GitHub Issues。公开 / 私有两种可见性。私有仅在**可见者**（创建者 + 有 `issue.private_read` 节点者）访问。无 assignee。
+
+### 议题 (issues)
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| id         | 主键                | 随机 UUID |
+| creator_id | 不为空，外键 `users(id)` | 创建者 |
+| title      | 不为空              | 标题 |
+| body       | 可为空              | 正文（Markdown） |
+| visibility | NOT NULL，枚举 `public`/`private`，默认 `public` | 可见性 |
+| state      | NOT NULL，枚举 `open`/`closed`，默认 `open` | 状态 |
+| closed_reason | 可为空，枚举 `completed`/`duplicated`/`not_planned` | 关闭原因 |
+| closed_by  | 可为空，外键 `users(id)` | 关闭者（版主） |
+| created_at | 不为空              | |
+| updated_at | 不为空              | |
+| closed_at  | 可为空              | 关闭时间 |
+
+### 标签 (issue_labels)
+
+标签由系统角色 `Admin` 创建 / 删除，`Helper`（协管）可分配给议题。
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| id    | 主键                | 随机 UUID |
+| name  | NOT NULL，UNIQUE    | 标签名（如 `bug`） |
+| color | 可为空，默认 `#000000` | 标签颜色（十六进制） |
+| created_by | 可为空，外键 `users(id)` | 创建者（管理） |
+| created_at | 不为空          | |
+
+### 议题-标签关联 (issue_label_records)
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| issue_id | 主键，外键 `issues(id)` | 议题 |
+| label_id | 主键，外键 `issue_labels(id)` | 标签 |
+
+> `(issue_id, label_id)` 复合主键。
+
+### 议题评论 (issue_comments)
+
+| 列名 | 约束 | 描述/备注 |
+|------|------|---------|
+| id      | 主键                | 随机 UUID |
+| issue_id| 不为空，外键 `issues(id)` | 所属议题 |
+| user_id | 不为空，外键 `users(id)` | 评论者 |
+| content | 不为空              | 评论内容 |
+| created_at | 不为空           | |
 
 ## 封禁 (bans)
 
@@ -218,6 +317,11 @@ UUID 与名称全局唯一，名称可变。
 - `yggdrasil_auth_records.email` 唯一索引；`user_id`、`profile_id` 索引。
 - `yggdrasil_textures(profile_id, texture_type)` UNIQUE；`profile_id` 索引。
 - `console_admins.user_id` UNIQUE。
+- `prefix_presets.value` UNIQUE。
+- `vote_answers(vote_id, user_id, option_id)` 唯一索引；`vote_id`、`user_id` 索引。
+- `issue_labels.name` UNIQUE。
+- `issue_label_records(issue_id, label_id)` 复合主键；`label_id` 索引。
+- `issue_comments(issue_id)` 索引。
 - `notifications(target_user_id)`、`announcements(published_at)` 索引。
 - `audit_logs(created_at)`、`console_audit_logs(created_at)` 索引。
 

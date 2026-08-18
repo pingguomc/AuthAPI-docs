@@ -11,10 +11,13 @@
 | **302** |       `IdTokenInvalid`        | 登录凭证校验失败，请重试                      | `GET /user/oidc/{providerId}/callback`                                                                     |
 | **400** |     `InvalidDisplayName`      | 显示名称格式不正确                         | `POST /user/register`                                                                                      |
 | **400** |        `InvalidEmail`         | 邮箱格式不正确                           | `POST /user/register`、`POST /email/code/*`                                                                 |
+| **400** |     `InvalidOption`        | 选项不存在或不属于该投票                   | `POST /votes/{voteId}/answer` |
+| **400** |     `InvalidPrefix`        | 前缀不在预设清单内                        | `PUT /management/users/{userId}/prefix` |
 | **400** |      `InvalidEmailCode`       | 邮箱验证码错误                           | `POST /user/register`、`POST /user/change-password`、`PUT /user/email`                                       |
 | **400** |       `InvalidRequest`        | 请求格式错误，请检查参数                      | 所有端点
 | **400** |       `InvalidRole`        | 角色取值不合法                           | `POST /management/console/users/{userId}/roles` |
 | **400** |     `ConfigParseError`     | 配置文件解析失败，本次改动未应用                 | `POST /management/console/reload` |
+| **400** |       `VoteClosed`            | 投票已截止                             | `POST /votes/{voteId}/answer` |
 | **400** |       `LastLoginMethod`       | 这是唯一的登录方式，不可解绑，请先绑定邮箱或其他 OIDC 提供商 | `DELETE /user/oidc/{providerId}`                                                                           |
 | **302** |       `ProviderDenied`        | 用户取消了授权                           | `GET /user/oidc/{providerId}/callback`                                                                     |
 | **400** |        `SamePassword`         | 新密码不能与旧密码相同                       | `POST /user/change-password`                                                                               |
@@ -40,12 +43,18 @@
 | **404** |        `GroupNotFound`        | 身份组不存在                           | `PATCH/DELETE /management/console/identity-groups/{groupId}`、`DELETE /management/console/users/{userId}/groups/{groupId}` |
 | **404** |     `GroupNotAssigned`        | 该用户未分配此身份组                      | `DELETE /management/console/users/{userId}/groups/{groupId}` |
 | **404** |  `NotificationNotFound`       | 通知不存在或不属于当前用户                 | `PUT /user/notifications/{id}/read` |
+| **404** |       `VoteNotFound`          | 投票不存在                             | `GET/POST /votes/{voteId}`、`GET /votes/{voteId}/data` |
+| **404** |      `IssueNotFound`          | 议题不存在或不可见                       | `GET/PATCH /issues/{issueId}`、`POST /issues/{issueId}/comments` |
+| **404** |        `LabelNotFound`        | 标签不存在                             | `DELETE /management/console/labels/{labelId}` |
+| **404** |      `PrefixNotFound`         | 前缀预设不存在                          | `DELETE /management/console/prefixes/{prefixId}` |
 | **404** |         `BanNotFound`         | 未找到该用户的封禁记录                       | `GET/DELETE /management/bans/{userId}` |
 | **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /management/bans` |
 | **409** |    `ProfileNameTaken`         | 角色名称已被占用                          | `PATCH /management/yggdrasil/profiles/{profileId}` |
 | **409** |    `TextureInUse`             | 材质仍被角色引用，不可删除                    | `DELETE /management/yggdrasil/textures/{hash}` |
 | **409** |    `GroupNameTaken`           | 身份组名称已被占用                         | `POST /management/console/identity-groups`、`PATCH /management/console/identity-groups/{groupId}` |
 | **409** |    `GroupAlreadyAssigned`     | 该用户已分配此身份组                       | `POST /management/console/users/{userId}/groups` |
+| **409** |     `LabelNameTaken`          | 标签名称已被占用                          | `POST /management/console/labels` |
+| **409** |      `PrefixTaken`            | 前缀值已在预设中                          | `POST /management/console/prefixes` |
 | **409** |   `EmailAlreadyRegistered`    | 该邮箱已被注册                           | `POST /user/register`、`POST /email/code/register`、`PUT /user/email`                                        |
 | **409** |    `ProviderAlreadyBound`     | 该账号已绑定其他用户                        | `GET /user/oidc/{providerId}/callback`（bind 场景）                                                            |
 | **429** |    `EmailCodeRateLimited`     | 验证码发送过于频繁，请稍后再试                   | `POST /email/code/*`                                                                                       |
