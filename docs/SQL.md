@@ -19,14 +19,14 @@
 | email         | 唯一，可为空                                               | 主站登录邮箱                                 |
 | password_hash | 可为空                                                  | Bcrypt 哈希                              |
 | username      | 唯一，不为空，默认 `user_它的id`                                | 展示用用户名（对外直接展示它）                        |
-| display_name  | 可为空                                                  | 仅保留字段，当前展示一律用 `username`               |
+| display_name  | 可为空                  | 仅保留字段（兼容），不再用于展示；展示一律用 `username`                |
 | role          | 枚举 `user`/`helper`/`moderator`/`admin`，不为空，默认 `user` | **系统角色（非空）**                           |
-| prefix        | 可为空                                                  | 显示前缀（取自 `prefix_presets`，不可自行设置，由管理维护） |
-| last_login_at | 可为空                                                  | 最后登录时间                                 |
-| created_at    | 不为空                                                  | 注册时间                                   |
-| updated_at    | 不为空                                                  | 更新时间                                   |
+| prefix_id     | 可为空，外键 `prefix_presets(id)` | 当前**佩戴**的前缀（须为该用户已持有的 `user_prefixes` 之一；玩家可自行选择佩戴或置空） |
+| last_login_at | 可为空                  | 最后登录时间                                 |
+| created_at    | 不为空                  | 注册时间                                   |
+| updated_at    | 不为空                  | 更新时间                                   |
 
-> 前端展示格式：`[前缀]username[身份组][系统角色]`（各段可空，多身份组并集展示）。
+> 前端展示格式：`[前缀]username[身份组][系统角色]`（前缀为该用户当前佩戴的那个；身份组多组并集展示）。
 
 用户是否被封禁不冗余存储；封禁状态一律由 `bans` 表即时计算得出。
 
@@ -39,9 +39,11 @@
 | provider_id | 不为空                |       |
 | issuer      | 不为空                |       |
 | subject     | 不为空                |       |
-| username    | 可为空                |       |
+| username    | 可为空                | 通过该 OIDC 直接注册时采用的用户名；非 OIDC 首次注册可为 null |
 | created_at  | 不为空                |       |
 | updated_at  | 不为空                |       |
+
+> **唯一性**：`(issuer, subject)` 应建立 `UNIQUE` 唯一约束，并在绑定/登录时使用 upsert，防止同一外部账号被并发绑定到多个本地用户（账号接管/绑定竞态）。
 
 ## 身份组 (identity_groups)
 
@@ -68,18 +70,35 @@
 
 > `(user_id, group_id)` 复合主键；同一用户同一组仅一条。
 
-## 前缀预设 (prefix_presets)
+## 前缀预设与用户持有 (prefix_presets / user_prefixes)
 
-前缀由系统统一管理：本表为可用前缀清单，后台 SuperAdmin 创建/删除；版主在此清单内为用户分配（`users.prefix`）。
+前缀为**多前缀模型**：预设清单由后台 SuperAdmin 维护；版主以上角色为用户**授予 / 收回**前缀；玩家持有多个前缀，可佩戴其中一个或置空。预设删除时，其下所有持有关联与佩戴一并清除。
 
-| 列名         | 约束                 | 描述/备注              |
-|------------|--------------------|--------------------|
-| id         | 主键                 | 随机 UUID            |
-| value      | NOT NULL，UNIQUE    | 前缀字符串，如 `[VIP]`    |
-| created_by | 可为空，外键 `users(id)` | 创建者（后台 SuperAdmin） |
-| created_at | 不为空                |                    |
+### 前缀预设 (prefix_presets)
 
-## 投票 (votes)
+| 列名               | 约束                             | 描述/备注              |
+|------------------|--------------------------------|---------------------|
+| id               | 主键                             | 随机 UUID            |
+| value            | NOT NULL，UNIQUE               | 前缀字符串，如 `[VIP]`    |
+| display_name     | 可为空                            | 前缀展示名              |
+| background_color | 可为空，默认 `#000000`              | 前缀背景色（十六进制）        |
+| created_by       | 可为空，外键 `users(id)`           | 创建者（后台 SuperAdmin） |
+| created_at       | 不为空                            |                     |
+
+### 用户持有-前缀关联 (user_prefixes)
+
+一名用户 ↔ 多个前缀（多对多），可持有 0..N 个。
+
+| 列名         | 约束             | 描述/备注   |
+|------------|----------------|---------|
+| user_id    | 主键，外键 `users(id)` | 用户      |
+| prefix_id  | 主键，外键 `prefix_presets(id)` | 持有的前缀    |
+| granted_by | 可为空，外键 `users(id)` | 授予操作者   |
+| granted_at | 不为空            | 授予时间    |
+
+> `(user_id, prefix_id)` 复合主键；同一用户同一前缀仅一条。当前佩戴记录在 `users.prefix_id`，必须为该用户持有的 `user_prefixes` 之一。
+
+### 投票 (votes)
 
 | 列名             | 约束                                          | 描述/备注                  |
 |----------------|---------------------------------------------|------------------------|
@@ -87,8 +106,8 @@
 | title          | 不为空                                         | 投票标题                   |
 | description    | 可为空                                         | 描述                     |
 | option_type    | NOT NULL，枚举 `single`/`multiple`，默认 `single` | 单选 / 多选                |
-| allow_multiple | NOT NULL，默认 `false`                         | 是否多选（与 option_type 一致） |
-| start_at       | 可为空                                         | 开始时间                   |
+| max_selections | 必要时 NOT NULL，默认 0                           | 多选时最多可选选项数；0 表示不限制       |
+| start_at       | 可为空                                         | 开始时间（未到开始时间不生效/不展示）    |
 | end_at         | 不为空                                         | 结束时间                   |
 | created_by     | 可为空，外键 `users(id)`                          | 创建者（版主）                |
 | created_at     | 不为空                                         |                        |
@@ -242,7 +261,7 @@ UUID 与名称全局唯一，名称可变。
 | created_at    | 不为空                                          |                     |
 | updated_at    | 不为空                                          |                     |
 
-> - 后台登录密码由系统生成/重置，用户输入该密码即可直接登录后台。
+> - 后台登录密码由系统生成/重置，**在用户系统角色被置为 `admin` 时当场生成**（无论是后台「系统角色变更」为 Admin，还是终端 `/admin` 命令），并在创建/重置时一次性展示给操作者，用户输入该密码即可直接登录后台。
 > - 级别来源：用户被提升为 `admin` 时默认 `admin`；由后端终端 `/admin` 命令设置的为 `super_admin`（见 [后端命令系统](backend.md)）。
 > - 后台会话（JWT 的 `jti`）存于缓存，不在此表，见 [缓存](cache.md)。
 
@@ -309,15 +328,15 @@ UUID 与名称全局唯一，名称可变。
 ## 索引说明
 
 - `users.username` 唯一索引；`users.email` 唯一索引（可空）。
-- `oidc_records(user_id, provider_id)` 唯一索引。
+- `oidc_records(user_id, provider_id)` 唯一索引；`oidc_records(issuer, subject)` **UNIQUE**。
 - `identity_groups.name` 唯一索引。
 - `user_groups(user_id, group_id)` 复合主键；`group_id` 索引。
+- `prefix_presets.value` 唯一索引；`user_prefixes(user_id, prefix_id)` 复合主键，`prefix_id` 索引。
 - `bans.user_id` UNIQUE。
 - `yggdrasil_profiles.name` 唯一索引；`user_id` 索引。
 - `yggdrasil_auth_records.email` 唯一索引；`user_id`、`profile_id` 索引。
 - `yggdrasil_textures(profile_id, texture_type)` UNIQUE；`profile_id` 索引。
 - `console_admins.user_id` UNIQUE。
-- `prefix_presets.value` UNIQUE。
 - `vote_answers(vote_id, user_id, option_id)` 唯一索引；`vote_id`、`user_id` 索引。
 - `issue_labels.name` UNIQUE。
 - `issue_label_records(issue_id, label_id)` 复合主键；`label_id` 索引。

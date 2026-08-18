@@ -1,17 +1,18 @@
 # 端点：/issues
 
-Issue（议题）系统**用户侧**端点，类 GitHub Issues。已登录用户均可创建与访问公开议题；私有议题仅**可见者**可访问（创建者 + 有 `issue.private_read` 权限节点者）。
+Issue（议题）系统**用户侧**端点，类 GitHub Issues。已登录用户均可创建与访问公开议题；私有议题仅**可见者**可访问（创建者 + 有 `issue.private_read` 权限节点者；**版主 Moderator 及以上默认拥有** `issue.private_read`）。
 
-标签创建/删除、分配与议题开/关在 [/management](management/index.md#issue-管理)。
+标签创建/删除、分配与议题开/关在 [/management](management/EP-issues.md)。
 
 ## 可见性
 
 - **公开（public）**：所有登录用户可见、可评论。
-- **私有（private）**：仅创建者与拥有 `issue.private_read` 节点者可见、可评论；他人访问返回 `404`（不暴露存在性）。
+- **私有（private）**：仅创建者与拥有 `issue.private_read` 节点者可见、可评论；他人访问返回 `404`（不暴露存在性）。`issue.private_read` 默认授予 `Moderator` 及以上系统角色。
 
 ## 目录
 
 - [GET /issues](#get-issues)
+- [GET /issues/mine](#get-issuesmine)
 - [POST /issues](#post-issues)
 - [GET /issues/{issueId}](#get-issuesissueid)
 - [PATCH /issues/{issueId}](#patch-issuesissueid)
@@ -164,4 +165,12 @@ Issue（议题）系统**用户侧**端点，类 GitHub Issues。已登录用户
 }
 ```
 
-> 标签的分配（给议题打标签）由协管在管理侧完成，见 [管理侧](management/index.md#issue-管理)。
+> 标签的分配（给议题打标签）由协管在管理侧完成，见 [管理侧](management/EP-issues.md)。
+
+### GET /issues/mine
+
+列出**当前用户创建**的议题（含其私有议题），供创建者查看自己发起的内容。
+
+**请求**：查询参数同上（`state` / `label` / `sort` / `q` / `page` / `pageSize`，默认 `state=open`）。
+
+**响应**：`200`，结构与 `GET /issues` 相同，但包含当前用户创建的所有私有议题。

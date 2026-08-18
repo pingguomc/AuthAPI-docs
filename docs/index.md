@@ -10,6 +10,11 @@
 - [email 端点](EP-email.md)
 - [management 端点](management/index.md)
 - [management users 端点](management/EP-users.md)
+- [management 前缀 端点](management/EP-prefixes.md)
+- [management votes 端点](management/EP-votes.md)
+- [management issues 端点](management/EP-issues.md)
+- [management bans 端点](management/EP-bans.md)
+- [management audit-logs 端点](management/EP-audit-logs.md)
 - [management yggdrasil 端点](management/EP-yggdrasil.md)
 - [management console 后台端点](management/console/index.md)
 - [votes 投票端点](EP-votes.md)
@@ -37,7 +42,7 @@
 * 请求与响应均为 JSON 格式。
 * `Content-Type` 均为 `application/json; charset=utf-8`。
 * 统一使用 ISO 8601 格式的 UTC 字符串表示时间。
-* 密码使用 Bcrypt 加密存储。
+* 密码使用 Bcrypt 进行加盐哈希（Salt + Hashing）存储。
 
 ### 错误信息格式
 
@@ -66,6 +71,10 @@ Http 状态码按通用约定返回。
 |   Path   |     /     |             |
 | Max-Age  | 86400（示例） | 24 小时过期（示例） |
 
+> **会话有效期补充**：
+> - 主站会话（`sid`）采用**滑动过期**机制：每次有效请求或登录成功后自动刷新 `Max-Age`（续期最长为 86400s），用户持续有操作则不会被强制登出。
+> - 后台会话（JWT）**不自动续期**，`expiresIn` 固定（如 3600s）。JWT 先于主站 Cookie 过期时，需重新通过后台登录换取新 JWT（主站 Cookie 通常仍有效，可直接复用，无需重新登录主站）。
+
 ## 模型
 
 ### 系统角色、身份组、权限模型
@@ -87,8 +96,13 @@ Http 状态码按通用约定返回。
 
 #### 用户展示
 
-用户前端展示格式为 `[前缀]username[身份组][系统角色]`，不再使用 `display_name`（保留字段，一律展示 `username`）。  
-前缀由系统**统一管理**：前缀预设由后台 SuperAdmin 维护，由版主（Moderator）以上角色在 `/management` 分配给用户，用户不能自行设置。
+用户前端展示格式为 `[前缀]username[身份组][系统角色]`，一律展示 `username`。`display_name` 仅为兼容保留字段（SQL 暂不删除），前端**不再使用**，一律以 `username` 展示。
+
+**前缀为多前缀模型**：
+- 前缀预设（含**展示名 `displayName`** 与**背景色 `backgroundColor`**）由后台 SuperAdmin 在 `/management/console` 维护；
+- 版主（Moderator）以上角色在 `/management` 为用户**授予 / 收回**前缀（多对多）；
+- 一名玩家可持有**多个**前缀，可通过 `PUT /user/me/prefix` 选择**佩戴其中一个**，或选择**不佩戴**（置空）；
+- 前端展示该玩家当前佩戴的单个前缀（若佩戴）。
 
 ### 审计日志
 

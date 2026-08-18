@@ -10,7 +10,7 @@
 |--------------------|-----------|-------------|
 | `management.users` | 用户列表 / 详情 | `Moderator` |
  
-接口为**只读**（列表 / 详情）。用户字段的修改见对应端点：系统角色、身份组在后台 [/management/console](console/index.md)；前缀由用户自行修改（`EP-user.md`）。
+接口为**只读**（列表 / 详情）。用户字段的修改见对应端点：系统角色、身份组在后台 [/management/console](console/index.md)；前缀的授予 / 收回见 [EP-prefixes.md](EP-prefixes.md)，玩家选择佩戴见 [PUT /user/me/prefix](../EP-user.md#put-usermeprefix-cookie身份验证)。
 
 ## 目录
 
@@ -52,7 +52,8 @@
       "username": "user_be08...",
       "email": "user@example.com",
       "role": "user", // 系统角色（非空）
-      "prefix": "[前缀]", // 显示前缀（可空）
+      "currentPrefixId": "p_01H...", // 当前佩戴前缀（可空）
+      "prefixes": ["[VIP]", "[MOD]"], // 持有前缀取值列表（可为空）
       "groups": ["groupA", "groupB"], // 所属身份组名（可为空）
       "status": "active",
       "bannedUntil": null,
@@ -85,7 +86,10 @@
   "username": "user_be08...",
   "email": "user@example.com",
   "role": "user", // 系统角色（非空）
-  "prefix": "[前缀]", // 可空
+  "currentPrefixId": "p_01H...", // 当前佩戴前缀（可空）
+  "prefixes": [ // 持有前缀详情（可空）
+    { "id": "p_01H...", "value": "[VIP]", "displayName": "VIP 用户", "backgroundColor": "#ffcc00" }
+  ],
   "identityGroups": [ // 所属身份组详情（可空）
     { "id": "g_01H...", "name": "groupA", "displayName": "Group A" }
   ],

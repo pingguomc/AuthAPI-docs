@@ -20,8 +20,6 @@ Yggdrasil 管理端点。从 `/management` 索引拆出，见 [management 索引
 - [角色](#角色)
   - [GET /management/yggdrasil/profiles](#get-managementyggdrasilprofiles)
   - [GET /management/yggdrasil/profiles/{profileId}](#get-managementyggdrasilprofilesprofileid)
-  - [PATCH /management/yggdrasil/profiles/{profileId}](#patch-managementyggdrasilprofilesprofileid)
-  - [DELETE /management/yggdrasil/profiles/{profileId}](#delete-managementyggdrasilprofilesprofileid)
 - [材质](#材质)
   - [GET /management/yggdrasil/textures](#get-managementyggdrasiltextures)
   - [DELETE /management/yggdrasil/textures/{hash}](#delete-managementyggdrasiltextureshash)

@@ -17,6 +17,8 @@
 
 **缓存**：主站会话与后台 JWT 均**存于缓存，不落库**，见 [缓存](../../cache.md)。后台会话键 `console_session:{jti}`。
 
+> **有效期说明**：后台 JWT **不自动续期**，`expiresIn` 固定（如 3600s）。JWT 先于主站 Cookie 过期时，需**重新登录后台**换取新 JWT（主站 Cookie 通常仍有效，可复用，无需重新登录主站；主站 Cookie 采用滑动过期自动续期，后台 JWT 不参与）。
+
 ## 命令概览
 
 | 端点                           | 后台级别要求          |
@@ -24,7 +26,6 @@
 | auth/login、logout、me         | 已登录 admin（任意级别） |
 | users/{userId}/roles（变更系统角色） | `super_admin`   |
 | identity-groups 增删改 / 分配移除   | `super_admin`   |
-| identity-groups 读取           | `admin`（任意级别）   |
 | notifications（发站内通知）         | `admin`（任意级别）   |
 | announcements（发全站公告）         | `super_admin`   |
 | labels（标签建/删，系统角色 Admin）     | `admin`（任意级别）   |
@@ -151,7 +152,8 @@
 **备注**：
 - `role` 不在四者内返回 `400`，`error` 为 `InvalidRole`。
 - 目标用户不存在返回 `404`，`error` 为 `UserNotFound`。
-- 将用户设为 / 取消 `admin` 时，应同步创建 / 删除其 `console_admins` 后台账户。
+- 将用户设为 `admin` 时，同步创建其 `console_admins` 后台账户，并**当场生成后台密码**（在响应或操作结果中一次性展示）；将用户从 `admin` 降级时，同步删除其后台账户。
+- 后台密码仅在创建/重置瞬间可见一次，之后只能重新生成，不提供明文查询。
 
 ---
 
@@ -159,17 +161,7 @@
 
 身份组元数据（`identity_groups`）在此后台管理。权限节点列表由配置文件定义，不在本组接口内；新增组后需在配置中补充其权限节点并[热重载](#配置热重载)。
 
-### 读取
-
-#### GET /management/console/identity-groups
-
-身份组列表。
-
-**权限**：后台级别 `admin`（含 `super_admin`）。
-
-**响应**：`200`，结构同 `GET /management/identity-groups`。
-
-### 写入（仅 super_admin）
+### 身份组写入（仅 super_admin）
 
 #### POST /management/console/identity-groups
 
@@ -310,7 +302,7 @@
 ---
 ## 标签管理
 
-Issue 标签的创建 / 删除由系统角色 `Admin` 完成；分配标签给议题及打开 / 关闭议题见 [/management](../index.md#issue-管理)。
+Issue 标签的创建 / 删除由系统角色 `Admin` 完成；分配标签给议题及打开 / 关闭议题见 [/management](../EP-issues.md)。
 
 ### GET /management/console/labels
 
@@ -385,7 +377,9 @@ Issue 标签的创建 / 删除由系统角色 `Admin` 完成；分配标签给�
 
 ```json5
 {
-  "value": "[VIP]"
+  "value": "[VIP]", // 唯一
+  "displayName": "VIP 用户", // 可选，展示名
+  "backgroundColor": "#ffcc00" // 可选，默认 #000000
 }
 ```
 
@@ -395,7 +389,7 @@ Issue 标签的创建 / 删除由系统角色 `Admin` 完成；分配标签给�
 
 ### DELETE /management/console/prefixes/{prefixId}
 
-删除前缀预设（已分配该前缀的用户其 `users.prefix` 会被清除）。
+删除前缀预设（该预设下所有 `user_prefixes` 关联一并清除；佩戴该前缀的用户其 `users.prefix_id` 同步置空）。
 
 **权限**：后台级别 `super_admin`。
 
@@ -472,4 +466,4 @@ Issue 标签的创建 / 删除由系统角色 `Admin` 完成；分配标签给�
 | `console.announcement_publish`                                           | 发全站公告      |
 | `console.reload`                                                         | 配置热重载      |
 
-主站操作审计见 [主站审计日志](../index.md#审计日志)。
+主站操作审计见 [主站审计日志](../EP-audit-logs.md)。
