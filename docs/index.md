@@ -9,6 +9,7 @@
 - [user 端点](EP-user.md)
 - [email 端点](EP-email.md)
 - [management 端点](management/index.md)
+- [management console 后台端点](management/console/index.md)
 - [captcha 端点](EP-captcha.md)
 - [错误码速查表](./error.md)
 - [数据库表结构（SQL）](./SQL.md)

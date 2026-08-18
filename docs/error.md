@@ -12,7 +12,9 @@
 | **400** |     `InvalidDisplayName`      | 显示名称格式不正确                         | `POST /user/register`                                                                                      |
 | **400** |        `InvalidEmail`         | 邮箱格式不正确                           | `POST /user/register`、`POST /email/code/*`                                                                 |
 | **400** |      `InvalidEmailCode`       | 邮箱验证码错误                           | `POST /user/register`、`POST /user/change-password`、`PUT /user/email`                                       |
-| **400** |       `InvalidRequest`        | 请求格式错误，请检查参数                      | 所有端点                                                                                                       |
+| **400** |       `InvalidRequest`        | 请求格式错误，请检查参数                      | 所有端点
+| **400** |       `InvalidRole`        | 角色取值不合法                           | `POST /management/console/users/{userId}/roles` |
+| **400** |     `ConfigParseError`     | 配置文件解析失败，本次改动未应用                 | `POST /management/console/reload` |
 | **400** |       `LastLoginMethod`       | 这是唯一的登录方式，不可解绑，请先绑定邮箱或其他 OIDC 提供商 | `DELETE /user/oidc/{providerId}`                                                                           |
 | **302** |       `ProviderDenied`        | 用户取消了授权                           | `GET /user/oidc/{providerId}/callback`                                                                     |
 | **400** |        `SamePassword`         | 新密码不能与旧密码相同                       | `POST /user/change-password`                                                                               |
@@ -28,12 +30,21 @@
 | **403** |         `LoginLocked`         | 登录失败次数过多，请稍后再试                    | `POST /user/login`                                                                                         |
 | **403** |        `OidcDisabled`         | OIDC 功能未启用                        | `GET /user/oidc/{providerId}/authorize`、`GET /user/oidc/{providerId}/bind`                                 |
 | **403** |         `UserBanned`          | 该账号已被封禁                           | `POST /user/login`、`GET /user/oidc/{providerId}/callback`                                                  |
+| **403** |       `ConsoleAdminDisabled`  | 该后台账户已被禁用                        | `POST /management/console/auth/login`                                                  |
 | **404** |     `EmailNotRegistered`      | 该邮箱未注册                            | `POST /email/code/login`                                                                                   |
 | **404** |      `ProviderNotFound`       | 不支持该 OIDC 提供商                     | `GET /user/oidc/{providerId}/*`                                                                            |
 | **404** |      `ProviderNotBound`       | 未绑定该 OIDC 提供商                     | `DELETE /user/oidc/{providerId}`                                                                           |
-| **404** |        `UserNotFound`         | 用户不存在                             | `GET /admin/users/{userId}`、`POST /admin/bans/{userId}`、`POST /admin/session-revocations/{userId}`、`POST /admin/role-grants/{userId}` |
-| **404** |         `BanNotFound`         | 未找到该用户的封禁记录                       | `GET /admin/bans/{userId}`、`DELETE /admin/bans/{userId}` |
-| **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /admin/bans/{userId}`                                                                                         |
+| **404** |        `UserNotFound`         | 用户不存在                             | `GET /management/users/{userId}`、`POST /management/bans`、`POST /management/yggdrasil/tokens/revoke-all` |
+| **404** |      `ProfileNotFound`        | 角色不存在                             | `GET/PATCH/DELETE /management/yggdrasil/profiles/{profileId}` |
+| **404** |   `LauncherSessionNotFound`   | 启动器会话不存在                        | `GET/DELETE /management/yggdrasil/launcher-sessions/{launcherSessionId}`、`POST /management/yggdrasil/launcher-sessions/{launcherSessionId}/reset-password` |
+| **404** |        `TokenNotFound`        | 令牌不存在                             | `DELETE /management/yggdrasil/tokens/{accessToken}` |
+| **404** |      `TextureNotFound`        | 材质不存在                             | `DELETE /management/yggdrasil/textures/{hash}` |
+| **404** |  `PermissionGrantNotFound`   | 未找到该权限授予                          | `DELETE /management/console/permission-grants/{userId}/{node}` |
+| **404** |         `BanNotFound`         | 未找到该用户的封禁记录                       | `GET/DELETE /management/bans/{userId}` |
+| **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /management/bans`                                                                                         |
+| **409** |    `ProfileNameTaken`        | 角色名称已被占用                          | `PATCH /management/yggdrasil/profiles/{profileId}`                                                              |
+| **409** |    `TextureInUse`            | 材质仍被角色引用，不可删除                    | `DELETE /management/yggdrasil/textures/{hash}`                                                             |
+| **409** | `PermissionAlreadyGranted`  | 该用户已拥有此权限节点                       | `POST /management/console/permission-grants`                                                            |
 | **409** |   `EmailAlreadyRegistered`    | 该邮箱已被注册                           | `POST /user/register`、`POST /email/code/register`、`PUT /user/email`                                        |
 | **409** |    `ProviderAlreadyBound`     | 该账号已绑定其他用户                        | `GET /user/oidc/{providerId}/callback`（bind 场景）                                                            |
 | **429** |    `EmailCodeRateLimited`     | 验证码发送过于频繁，请稍后再试                   | `POST /email/code/*`                                                                                       |
