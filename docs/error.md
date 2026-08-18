@@ -39,6 +39,7 @@
 | **404** |      `TextureNotFound`        | 材质不存在                             | `DELETE /management/yggdrasil/textures/{hash}` |
 | **404** |        `GroupNotFound`        | 身份组不存在                           | `PATCH/DELETE /management/console/identity-groups/{groupId}`、`DELETE /management/console/users/{userId}/groups/{groupId}` |
 | **404** |     `GroupNotAssigned`        | 该用户未分配此身份组                      | `DELETE /management/console/users/{userId}/groups/{groupId}` |
+| **404** |  `NotificationNotFound`       | 通知不存在或不属于当前用户                 | `PUT /user/notifications/{id}/read` |
 | **404** |         `BanNotFound`         | 未找到该用户的封禁记录                       | `GET/DELETE /management/bans/{userId}` |
 | **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /management/bans` |
 | **409** |    `ProfileNameTaken`         | 角色名称已被占用                          | `PATCH /management/yggdrasil/profiles/{profileId}` |

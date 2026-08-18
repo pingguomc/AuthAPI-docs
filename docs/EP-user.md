@@ -18,6 +18,10 @@
    - [GET /user/oidc/{providerId}/bind (Cookie身份验证)](#get-useroidcprovideridbind-cookie身份验证)
    - [GET /user/oidc/{providerId}/callback](#get-useroidcprovideridcallback)
    - [DELETE /user/oidc/{providerId} (Cookie身份验证)](#delete-useroidcproviderid-cookie身份验证)
+- [通知与全站公告](#通知与全站公告cookie身份验证)
+   - [GET /user/notifications](#get-usernotifications)
+   - [PUT /user/notifications/{id}/read](#put-usernotificationsidread)
+   - [GET /user/announcements](#get-userannouncements)
 
 ## POST /user/register
 
@@ -297,5 +301,69 @@ OIDC 相关的用户操作端点。
 ```json5
 {
    "bindingOIDC": ["google"]  // 解绑后剩余的绑定列表
+}
+```
+
+## 通知与公告（Cookie身份验证）
+
+### GET /user/notifications
+
+获取当前用户的站内通知列表。
+
+**请求**：凭据通过 Cookie 传递，请求体为空。
+
+**查询参数**：`page` / `pageSize`（可选，默认 1 / 20）。
+
+**响应**：`200`：
+```json5
+{
+  "total": 12,
+  "unread": 3,
+  "page": 1,
+  "pageSize": 20,
+  "items": [
+    {
+      "id": "n_01H...",
+      "title": "欢迎加入社区",
+      "content": "这里是内容",
+      "isRead": false,
+      "createdAt": "2026-08-08T10:30:00Z"
+    }
+  ]
+}
+```
+
+### PUT /user/notifications/{id}/read
+
+将指定通知标记为已读（全部已读时可不传 `{id}`，即 `PUT /user/notifications/read`）。
+
+**请求**：凭据通过 Cookie 传递，请求体为空。
+
+**响应**：成功返回 `204`，无响应体。
+
+**备注**：通知不存在或不属于当前用户返回 `404`，`error` 为 `NotificationNotFound`。
+
+### GET /user/announcements
+
+获取当前生效的全站公告列表。
+
+**请求**：凭据通过 Cookie 传递，请求体为空。
+
+**查询参数**：`page` / `pageSize`（可选）。
+
+**响应**：`200`：
+```json5
+{
+  "total": 2,
+  "page": 1,
+  "pageSize": 20,
+  "items": [
+    {
+      "id": "a_01H...",
+      "title": "维护通知",
+      "content": "今晚 00:00 停机维护。",
+      "publishedAt": "2026-08-08T10:30:00Z"
+    }
+  ]
 }
 ```

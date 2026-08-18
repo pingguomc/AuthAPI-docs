@@ -129,32 +129,51 @@ UUID 与名称全局唯一，名称可变。
 | updated_at  | 不为空                                | |
 | UNIQUE      | `(profile_id, texture_type)`         | 每类至多一条 |
 
-## 后台账户与会话
+## 后台账户
 
-后台采用独立鉴权，与主站账号体系**一对一**：一个系统角色为 `admin` 的用户，后台账户有且唯一。
+后台采用独立鉴权，与主站账号体系**一对一**：一个系统角色为 `admin` 的用户，后台账户有且唯一。后台会话状态**不落库**（见 [缓存](cache.md#后台会话jwt)。
 
 ### 后台账户 (console_admins)
 
 | 列名        | 约束                | 描述/备注 |
 |------------|-------------------|---------|
 | id          | 主键，外键 `users.id`，UNIQUE | 对应主站用户（系统角色为 admin） |
+| role        | NOT NULL，枚举 `admin`/`super_admin`，默认 `admin` | 后台级别：普通管理 / 超级管理 |
 | password_hash | NOT NULL        | 后台登录密码（系统生成）的哈希 |
 | created_at  | 不为空             | |
 | updated_at  | 不为空             | |
 
-> 后台登录密码由系统生成/重置，用户输入该密码即可直接登录后台（无需二次输入其他凭据）。
+> - 后台登录密码由系统生成/重置，用户输入该密码即可直接登录后台。
+> - 级别来源：用户被提升为 `admin` 时默认 `admin`；由后端终端 `/admin` 命令设置的为 `super_admin`（见 [后端命令系统](backend.md)）。
+> - 后台会话（JWT 的 `jti`）存于缓存，不在此表，见 [缓存](cache.md)。
 
-### 后台会话 (console_sessions)
+## 站内通知与全站公告
 
-后台接口同时校验主站 Cookie 与后台 JWT。JWT 会话以此表持久化记录。
+### 站内通知 (notifications)
 
-| 列名        | 约束                              | 描述/备注 |
-|------------|----------------------------------|---------|
-| id          | 主键                             | 随机 UUID |
-| admin_id    | NOT NULL，外键 `console_admins.id` | 所属后台账户 |
-| session_token | NOT NULL，UNIQUE               | JWT 的 jti（或刷新令牌），哈希存 |
-| expires_at  | 不为空                           | 会话过期时间 |
-| created_at  | 不为空                           | |
+单用户通知。后台发送，用户读取并按需标记已读。
+
+| 列名        | 约束        | 描述/备注 |
+|------------|-----------|---------|
+| id          | 主键        | 随机 UUID |
+| target_user_id | NOT NULL，外键 `users.id` | 接收用户 |
+| title       | 不为空       | 标题 |
+| content     | 不为空       | 内容 |
+| is_read     | NOT NULL，默认 `false` | 是否已读 |
+| sent_by     | 可为空，外键 `users.id` | 发送后台操作者 |
+| created_at  | 不为空       | |
+
+### 全站公告 (announcements)
+
+| 列名        | 约束        | 描述/备注 |
+|------------|-----------|---------|
+| id          | 主键 | 随机 UUID |
+| title       | 不为空 | 标题 |
+| content     | 不为空 | 内容 |
+| published   | NOT NULL，默认 `true` | 是否对外展示 |
+| published_at| 可为空 | 发布时间 |
+| sent_by     | 可为空，外键 `users.id` | 发送后台操作者（super_admin） |
+| created_at  | 不为空 | |
 
 ## 审计日志
 
@@ -198,7 +217,8 @@ UUID 与名称全局唯一，名称可变。
 - `yggdrasil_profiles.name` 唯一索引；`user_id` 索引。
 - `yggdrasil_auth_records.email` 唯一索引；`user_id`、`profile_id` 索引。
 - `yggdrasil_textures(profile_id, texture_type)` UNIQUE；`profile_id` 索引。
-- `console_admins.user_id` UNIQUE；`console_sessions.session_token` 唯一索引。
+- `console_admins.user_id` UNIQUE。
+- `notifications(target_user_id)`、`announcements(published_at)` 索引。
 - `audit_logs(created_at)`、`console_audit_logs(created_at)` 索引。
 
 > 外键 `ON DELETE CASCADE` 级联删除保证一致性；审计日志表不参与级联删除（保留历史）。
