@@ -48,6 +48,7 @@
 | 键 | 内容 | TTL | 说明 |
 |----|-----|-----|------|
 | `ratelimit:{维度}:{标识}` | 请求计数 | 按限速窗口 | 限流计数，维度如 `ip`、`userId`、`email`、`ip+email` 等 |
+| `login_attempts:{userId}` | 登录失败次数 | 锁定期（如 15 分钟） | **账号级**登录失败计数，用于 `LoginLocked`；登录成功后或解锁时清零。阈值与其配套配置见 [速率限制](ratelimit.md#账号登录失败锁定loginlocked)。 |
 
 ## 其他
 

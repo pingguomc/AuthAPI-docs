@@ -24,6 +24,8 @@
 | **302** |       `StateMismatch`       | 安全校验失败，请重试                        | `GET /user/oidc/{providerId}/callback`                                                                                    |
 | **302** |    `TokenExchangeFailed`    | 登录失败，请重试                          | `GET /user/oidc/{providerId}/callback`                                                                                    |
 | **400** |       `WeakPassword`        | 密码强度不足，需包含字母和数字且不少于6位             | `POST /user/register`、`POST /user/change-password`                                                                        |
+| **400** |  `ConsolePasswordWeak`      | 后台密码强度不足                          | `POST /management/console/auth/set-password`                                                                             |
+| **400** |   `SameAsMainPassword`      | 后台密码不能与主站密码一致                    | `POST /management/console/auth/set-password`                                                                             |
 | **401** |    `InvalidCredentials`     | 邮箱或密码错误（或邮箱或验证码错误）                | `POST /user/login`                                                                                                        |
 | **401** |       `Unauthorized`        | 请先登录                              | 所有需要 Cookie 身份验证的端点                                                                                                       |
 | **403** |      `CaptchaRequired`      | 本次操作需要人机验证，请完成挑战                  | `onDemand` 模式下触发的端点                                                                                                       |
@@ -34,11 +36,12 @@
 | **403** |       `OidcDisabled`        | OIDC 功能未启用                        | `GET /user/oidc/{providerId}/authorize`、`GET /user/oidc/{providerId}/bind`                                                |
 | **403** |        `UserBanned`         | 该账号已被封禁                           | `POST /user/login`、`GET /user/oidc/{providerId}/callback`                                                                 |
 | **403** |   `ConsoleAdminDisabled`    | 该后台账户已被禁用                         | `POST /management/console/auth/login`                                                                                     |
+| **403** |  `ConsolePasswordNotSet`    | 该后台账户尚未设置密码，需先完成首次设密            | `POST /management/console/auth/login`                                                                                     |
 | **404** |    `EmailNotRegistered`     | 该邮箱未注册                            | `POST /email/code/login`                                                                                                  |
 | **404** |     `ProviderNotFound`      | 不支持该 OIDC 提供商                     | `GET /user/oidc/{providerId}/*`                                                                                           |
 | **404** |     `ProviderNotBound`      | 未绑定该 OIDC 提供商                     | `DELETE /user/oidc/{providerId}`                                                                                          |
 | **404** |       `UserNotFound`        | 用户不存在                             | `GET /management/users/{userId}`、`POST /management/bans`                                                                  |
-| **404** |      `ProfileNotFound`      | 角色不存在                             | `GET/PATCH/DELETE /management/yggdrasil/profiles/{profileId}`                                                             |
+| **404** |      `ProfileNotFound`      | 角色不存在                             | `GET/PATCH/DELETE /management/yggdrasil/profiles/{profileId}`、`PATCH /yggdrasil/profiles/{id}`                          |
 | **404** |      `TextureNotFound`      | 材质不存在                             | `DELETE /management/yggdrasil/textures/{hash}`                                                                            |
 | **404** |       `GroupNotFound`       | 身份组不存在                            | `PATCH/DELETE /management/console/identity-groups/{groupId}`、`DELETE /management/console/users/{userId}/groups/{groupId}` |
 | **404** |     `GroupNotAssigned`      | 该用户未分配此身份组                        | `DELETE /management/console/users/{userId}/groups/{groupId}`                                                              |
@@ -46,11 +49,12 @@
 | **404** |       `VoteNotFound`        | 投票不存在                             | `GET/POST /votes/{voteId}`、`GET /votes/{voteId}/data`                                                                     |
 | **404** |       `IssueNotFound`       | 议题不存在或不可见                         | `GET/PATCH /issues/{issueId}`、`POST /issues/{issueId}/comments`                                                           |
 | **404** |       `LabelNotFound`       | 标签不存在                             | `DELETE /management/console/labels/{labelId}`                                                                             |
+| **404** |   `AnnouncementNotFound`   | 公告不存在                             | `DELETE /management/console/announcements/{id}`                                                                           |
 | **404** |      `PrefixNotFound`       | 前缀预设不存在                           | `DELETE /management/console/prefixes/{prefixId}`、`POST /management/users/{userId}/prefixes`                                |
 | **404** |   `PrefixNotGranted`       | 该用户未持有此前缀                         | `DELETE /management/users/{userId}/prefixes/{prefixId}`、`PUT /user/me/prefix`                                               |
 | **404** |        `BanNotFound`        | 未找到该用户的封禁记录                       | `GET/DELETE /management/bans/{userId}`                                                                                    |
 | **409** |     `BanAlreadyExists`      | 该用户已有生效中的封禁记录                     | `POST /management/bans`                                                                                                   |
-| **409** |     `ProfileNameTaken`      | 角色名称已被占用                          | `PATCH /management/yggdrasil/profiles/{profileId}`                                                                        |
+| **409** |     `ProfileNameTaken`      | 角色名称已被占用                          | `PATCH /management/yggdrasil/profiles/{profileId}`、`PATCH /yggdrasil/profiles/{id}`                                        |
 | **409** |       `TextureInUse`        | 材质仍被角色引用，不可删除                     | `DELETE /management/yggdrasil/textures/{hash}`                                                                            |
 | **409** |      `GroupNameTaken`       | 身份组名称已被占用                         | `POST /management/console/identity-groups`、`PATCH /management/console/identity-groups/{groupId}`                          |
 | **409** |   `GroupAlreadyAssigned`    | 该用户已分配此身份组                        | `POST /management/console/users/{userId}/groups`                                                                          |

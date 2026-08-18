@@ -74,6 +74,8 @@
 
 **响应**：成功返回HTTP状态码 `200`，通过 `Set-Cookie` 响应头下发会话凭据，无响应体。
 
+**备注**：账号级登录失败达到阈值时返回 `403 LoginLocked`（见 [速率限制](./ratelimit.md#账号登录失败锁定loginlocked)）；登录成功后对应失败计数清零。
+
 ## GET /user/me (Cookie身份验证)
 
 获得用户信息。
@@ -284,7 +286,7 @@ OIDC 相关的用户操作端点。
 4. 验证 `id_token`（签名、iss、aud、exp）
 5. 可选：调 `/userinfo` 获取更多 claims
 6. 根据缓存条目中的 `action` 决定：
-    - `login`：创建或匹配本地用户，建立本地 session（`Set-Cookie`）。若匹配到已注册用户则直接登录；若需新建本地用户，其 `username` 取该 OIDC 的 username claim（如 `preferred_username`/`username`），并在 `oidc_records.username` 记录该用户名（其它字段与其他登录方式一致，不额外改动）
+    - `login`：创建或匹配本地用户，建立本地 session（`Set-Cookie`）。**匹配键只能是该 OIDC 的 `(issuer, subject)` 组合**——若已存在相应 `oidc_records` 则直接登录该本地账号；**绝不能按 `users.email` 或用户名去匹配主站用户**（OIDC 提供商提供的邮箱与本地 `users.email` 相互独立、互不互通）。若不存在对应记录，则新建本地用户，其 `username` 取该 OIDC 的 username claim（如 `preferred_username`/`username`），写入 `oidc_records`（含 `(issuer, subject)`）并在 `oidc_records.username` 记录该用户名（其余字段与其他登录方式一致，不额外改动）
     - `bind`：校验用户已登录，将 Provider 账号关联到当前用户（若该 Provider 账号已被其他用户绑定，返回错误；若当前用户已绑定该 Provider，视为幂等，直接成功）
 7. 从缓存取出生效的跳转地址（授权时写入：传入且命中白名单 → 使用它；未传 → 使用 `default_redirect_uri`；均无 → 根路径 `/`），302 重定向至该地址。
    - 为保证并发安全，`login` 新建本地用户与 `bind` 关联均应基于 `(issuer, subject)` 唯一性使用 upsert，避免同一外部账号被并发绑定多个本地用户。

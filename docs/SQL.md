@@ -32,16 +32,16 @@
 
 ## OIDC 记录 (oidc_records)
 
-| 列名          | 约束                 | 描述/备注 |
-|-------------|--------------------|-------|
-| id          | 自增 INT 主键          |       |
-| user_id     | 不为空，外键 `users(id)` |       |
-| provider_id | 不为空                |       |
-| issuer      | 不为空                |       |
-| subject     | 不为空                |       |
-| username    | 可为空                | 通过该 OIDC 直接注册时采用的用户名；非 OIDC 首次注册可为 null |
-| created_at  | 不为空                |       |
-| updated_at  | 不为空                |       |
+| 列名          | 约束                 | 描述/备注                                  |
+|-------------|--------------------|----------------------------------------|
+| id          | 自增 INT 主键          |                                        |
+| user_id     | 不为空，外键 `users(id)` |                                        |
+| provider_id | 不为空                |                                        |
+| issuer      | 不为空                |                                        |
+| subject     | 不为空                |                                        |
+| username    | 可为空                | 通过该 OIDC 直接注册时采用此用户名；非 OIDC 首次注册则此项不使用 |
+| created_at  | 不为空                |                                        |
+| updated_at  | 不为空                |                                        |
 
 > **唯一性**：`(issuer, subject)` 应建立 `UNIQUE` 唯一约束，并在绑定/登录时使用 upsert，防止同一外部账号被并发绑定到多个本地用户（账号接管/绑定竞态）。
 
@@ -76,25 +76,25 @@
 
 ### 前缀预设 (prefix_presets)
 
-| 列名               | 约束                             | 描述/备注              |
-|------------------|--------------------------------|---------------------|
-| id               | 主键                             | 随机 UUID            |
-| value            | NOT NULL，UNIQUE               | 前缀字符串，如 `[VIP]`    |
-| display_name     | 可为空                            | 前缀展示名              |
-| background_color | 可为空，默认 `#000000`              | 前缀背景色（十六进制）        |
-| created_by       | 可为空，外键 `users(id)`           | 创建者（后台 SuperAdmin） |
-| created_at       | 不为空                            |                     |
+| 列名               | 约束                 | 描述/备注              |
+|------------------|--------------------|--------------------|
+| id               | 主键                 | 随机 UUID            |
+| value            | NOT NULL，UNIQUE    | 前缀字符串，如 `[VIP]`    |
+| display_name     | 可为空                | 前缀展示名              |
+| background_color | 可为空，默认 `#000000`   | 前缀背景色（十六进制）        |
+| created_by       | 可为空，外键 `users(id)` | 创建者（后台 SuperAdmin） |
+| created_at       | 不为空                |                    |
 
 ### 用户持有-前缀关联 (user_prefixes)
 
 一名用户 ↔ 多个前缀（多对多），可持有 0..N 个。
 
-| 列名         | 约束             | 描述/备注   |
-|------------|----------------|---------|
-| user_id    | 主键，外键 `users(id)` | 用户      |
-| prefix_id  | 主键，外键 `prefix_presets(id)` | 持有的前缀    |
-| granted_by | 可为空，外键 `users(id)` | 授予操作者   |
-| granted_at | 不为空            | 授予时间    |
+| 列名         | 约束                         | 描述/备注 |
+|------------|----------------------------|-------|
+| user_id    | 主键，外键 `users(id)`          | 用户    |
+| prefix_id  | 主键，外键 `prefix_presets(id)` | 持有的前缀 |
+| granted_by | 可为空，外键 `users(id)`         | 授予操作者 |
+| granted_at | 不为空                        | 授予时间  |
 
 > `(user_id, prefix_id)` 复合主键；同一用户同一前缀仅一条。当前佩戴记录在 `users.prefix_id`，必须为该用户持有的 `user_prefixes` 之一。
 
@@ -253,16 +253,18 @@ UUID 与名称全局唯一，名称可变。
 
 ### 后台账户 (console_admins)
 
-| 列名            | 约束                                           | 描述/备注               |
-|---------------|----------------------------------------------|---------------------|
-| id            | 主键，外键 `users.id`，UNIQUE                      | 对应主站用户（系统角色为 admin） |
-| role          | NOT NULL，枚举 `admin`/`super_admin`，默认 `admin` | 后台级别：普通管理 / 超级管理    |
-| password_hash | NOT NULL                                     | 后台登录密码（系统生成）的哈希     |
-| created_at    | 不为空                                          |                     |
-| updated_at    | 不为空                                          |                     |
+| 列名                 | 约束                                           | 描述/备注                                       |
+|--------------------|----------------------------------------------|---------------------------------------------|
+| id                 | 主键，外键 `users.id`，UNIQUE                      | 对应主站用户（系统角色为 admin）                      |
+| role               | NOT NULL，枚举 `admin`/`super_admin`，默认 `admin` | 后台级别：普通管理 / 超级管理                         |
+| password_hash      | 可为空                                          | 后台登录密码的 Bcrypt 哈希；为空表示处于「待设密」状态            |
+| must_change_password | NOT NULL，默认 `true`                          | 待设密标记：首次登录须先经 `set-password` 设置强密码；被重置后置回 `true` |
+| created_at         | 不为空                                          |                                             |
+| updated_at         | 不为空                                          |                                             |
 
-> - 后台登录密码由系统生成/重置，**在用户系统角色被置为 `admin` 时当场生成**（无论是后台「系统角色变更」为 Admin，还是终端 `/admin` 命令），并在创建/重置时一次性展示给操作者，用户输入该密码即可直接登录后台。
-> - 级别来源：用户被提升为 `admin` 时默认 `admin`；由后端终端 `/admin` 命令设置的为 `super_admin`（见 [后端命令系统](backend.md)）。
+> - 用户被提升为 `admin`（后台「系统角色变更」为 Admin）时**不会自动生成密码**，而是创建处于**待设密**状态（`password_hash` 为空、`must_change_password = true`）的后台账户；首次进入后台须经 `POST /management/console/auth/set-password` 手动设置强密码（强度必须达标，且 Bcrypt 比对不能与主站密码一致）。SuperAdmin 可用 `reset-password` 将普通 Admin 重置回待设密状态。
+> - 由后端终端 `/admin` 命令设置的为 `super_admin`，其后台密码由终端**随即生成**（见 [后端命令系统](backend.md)），SuperAdmin 的后台密码仅能由终端 `/admin` 控制。
+> - 级别来源：提升为 `admin` 时默认 `admin`；`/admin` 命令设置为 `super_admin`。
 > - 后台会话（JWT 的 `jti`）存于缓存，不在此表，见 [缓存](cache.md)。
 
 ## 站内通知与全站公告

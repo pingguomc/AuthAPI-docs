@@ -21,7 +21,17 @@
 
 `/yggdrasil/api/profiles/minecraft` 则 `5/1`（每个 IP）。
 
+`PATCH /yggdrasil/profiles/{id}`（角色改名）则 `1/31536000`（每个 profileId，默认一年最多改一次）。
+
 其他需要 `accessToken` 认证的，`10/1`（每个 accessToken）。
+
+## 账号登录失败锁定（LoginLocked）
+
+针对**单个账号**的登录失败计数（缓存键 `login_attempts:{userId}`，见 [缓存](cache.md)），独立于 IP 维度限流生效：
+
+- 默认：一个账号连续失败 `5` 次 / `15` 分钟，则锁定该账号 `15` 分钟；锁定期间 `POST /user/login` 返回 `403 LoginLocked`。
+- 阈值与锁定期均可通过 `rate-limit.toml` 配置；登录成功后或锁定结束后清零。
+- 独立于 IP 维度限流与人机验证开关，任何人机验证关闭都不会放宽该锁定。
 
 ## 邮件端点
 
