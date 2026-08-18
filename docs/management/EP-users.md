@@ -1,15 +1,15 @@
 # 端点：/management/users
 
-用户管理端点（只读）。从 `/management` 索引拆出，见 [management 索引](index.md)。
+用户管理端点。从 `/management` 索引拆出，见 [management 索引](index.md)。
 
 ## 权限
 
 本文件涉及的节点及默认最低系统角色：
 
-| 权限节点 | 说明 | 默认最低系统角色 |
-|-----------|------|-----------|
+| 权限节点               | 说明        | 默认最低系统角色    |
+|--------------------|-----------|-------------|
 | `management.users` | 用户列表 / 详情 | `Moderator` |
-
+ 
 接口为**只读**（列表 / 详情）。用户字段的修改见对应端点：系统角色、身份组在后台 [/management/console](console/index.md)；前缀由用户自行修改（`EP-user.md`）。
 
 ## 目录
@@ -27,17 +27,17 @@
 
 **请求**：无请求体，查询参数如下：
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `page` | int | 页码，默认 1 |
-| `pageSize` | int | 每页条数，默认 20，上限 100 |
-| `q` | string | 邮箱精确匹配 **或** 用户名前缀匹配，不做全文模糊 |
-| `role` | string | 按系统角色筛选 |
-| `status` | string | `active` / `banned`（由 bans 即时计算） |
-| `registeredAfter` | string | 注册时间下界，ISO 8601 UTC |
-| `registeredBefore` | string | 注册时间上界，ISO 8601 UTC |
-| `sortBy` | string | 仅 `createdAt`、`lastLoginAt`，默认 `createdAt` |
-| `order` | string | `asc` / `desc`，默认 `desc` |
+| 参数                 | 类型     | 说明                                         |
+|--------------------|--------|--------------------------------------------|
+| `page`             | int    | 页码，默认 1                                    |
+| `pageSize`         | int    | 每页条数，默认 20，上限 100                          |
+| `q`                | string | 邮箱精确匹配 **或** 用户名前缀匹配，不做全文模糊                |
+| `role`             | string | 按系统角色筛选                                    |
+| `status`           | string | `active` / `banned`（由 bans 即时计算）           |
+| `registeredAfter`  | string | 注册时间下界，ISO 8601 UTC                        |
+| `registeredBefore` | string | 注册时间上界，ISO 8601 UTC                        |
+| `sortBy`           | string | 仅 `createdAt`、`lastLoginAt`，默认 `createdAt` |
+| `order`            | string | `asc` / `desc`，默认 `desc`                   |
 
 **响应**：
 

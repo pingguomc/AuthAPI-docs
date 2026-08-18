@@ -8,8 +8,8 @@ Yggdrasil 管理端点。从 `/management` 索引拆出，见 [management 索引
 
 本文件涉及的节点及默认最低系统角色：
 
-| 权限节点 | 说明 | 默认最低系统角色 |
-|-----------|------|-----------|
+| 权限节点                            | 说明   | 默认最低系统角色    |
+|---------------------------------|------|-------------|
 | `management.yggdrasil.profiles` | 角色管理 | `Moderator` |
 | `management.yggdrasil.textures` | 材质管理 | `Moderator` |
 
@@ -79,38 +79,6 @@ Yggdrasil 管理端点。从 `/management` 索引拆出，见 [management 索引
   "updatedAt": "2026-08-08T10:30:00Z"
 }
 ```
-
-**备注**：不存在返回 `404`，`error` 为 `ProfileNotFound`。
-
-### PATCH /management/yggdrasil/profiles/{profileId}
-
-角色改名（名称全局唯一）。
-
-**权限**：`management.yggdrasil.profiles`，默认最低系统角色 `Moderator`。
-
-**请求**：
-
-```json5
-{
-  "name": "SteveNew"
-}
-```
-
-**响应**：`200`，返回更新后的角色信息。
-
-**后端处理**：改名后，绑定该角色的令牌（缓存）应标为**暂时失效**，令启动器刷新令牌以获取新名称。
-
-**备注**：名称已存在返回 `409`，`error` 为 `ProfileNameTaken`。
-
-### DELETE /management/yggdrasil/profiles/{profileId}
-
-删除角色。删除后其材质一并清理。
-
-**权限**：`management.yggdrasil.profiles`，默认最低系统角色 `Moderator`。
-
-**请求**：无请求体。
-
-**响应**：`204`。
 
 **备注**：不存在返回 `404`，`error` 为 `ProfileNotFound`。
 

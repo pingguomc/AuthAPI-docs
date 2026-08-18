@@ -27,13 +27,13 @@ Issue（议题）系统**用户侧**端点，类 GitHub Issues。已登录用户
 
 **请求**：查询参数：
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `state` | string | `open` / `closed`（默认 `open`） |
-| `label` | string | 按标签名筛选 |
-| `sort` | string | `created`/`updated`/`comments`，默认 `created` |
-| `q` | string | 标题/正文搜索 |
-| `page` / `pageSize` | int | 分页 |
+| 参数                  | 类型     | 说明                                          |
+|---------------------|--------|---------------------------------------------|
+| `state`             | string | `open` / `closed`（默认 `open`）                |
+| `label`             | string | 按标签名筛选                                      |
+| `sort`              | string | `created`/`updated`/`comments`，默认 `created` |
+| `q`                 | string | 标题/正文搜索                                     |
+| `page` / `pageSize` | int    | 分页                                          |
 
 **响应**：`200`：
 

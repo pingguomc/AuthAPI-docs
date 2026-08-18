@@ -4,7 +4,7 @@
 
 ## 权限
 
-访问本端点下的任意接口要求会话用户拥有对应的**权限节点**，否则返回 `403`，`error` 为 `Forbidden`。
+访问本端点下的任意接口要求会话用户拥有对应的 **权限节点**，否则返回 `403`，`error` 为 `Forbidden`。
 
 权限判断采用并行双模型，实际节点 = 系统角色内建节点 ∪ 所属身份组节点，见 [权限体系](../SQL.md#权限体系说明)。
 
@@ -12,8 +12,8 @@
 
 管理端点按功能分文件：
 
-- [用户管理（/management/users）](users.md)
-- [Yggdrasil 管理（/management/yggdrasil）](yggdrasil.md)
+- [用户管理（/management/users）](EP-users.md)
+- [Yggdrasil 管理（/management/yggdrasil）](EP-yggdrasil.md)
 - [身份组（/management/identity-groups）](#身份组)
 - [前缀分配（/management/users/{userId}/prefix）](#前缀分配)
 - [投票管理（/management/votes）](#投票管理)
@@ -23,26 +23,26 @@
 
 本文件内涉及的权限节点及默认最低系统角色（缺省为 `Moderator`）：
 
-| 权限节点 | 说明 | 默认最低系统角色 |
-|-----------|------|-----------|
-| `management.identity_groups` | 身份组列表 | `Moderator` |
-| `management.prefix.assign` | 为给用户分配前缀 | `Moderator`（版主） |
-| `management.votes` | 投票创建 / 管理 | `Moderator`（版主） |
-| `management.votes.data` | 查看投票统计数据 | `Helper`（协管） |
-| `management.issues` | Issue 标签分配、开/关 | `Helper` ~ `Moderator`（分见下表） |
-| `management.bans` | 封禁管理 | `Moderator` |
-| `management.audit_logs` | 主站审计日志查询 | `Moderator` |
+| 权限节点                         | 说明             | 默认最低系统角色                     |
+|------------------------------|----------------|------------------------------|
+| `management.identity_groups` | 身份组列表          | `Moderator`                  |
+| `management.prefix.assign`   | 为给用户分配前缀       | `Moderator`（版主）              |
+| `management.votes`           | 投票创建 / 管理      | `Moderator`（版主）              |
+| `management.votes.data`      | 查看投票统计数据       | `Helper`（协管）                 |
+| `management.issues`          | Issue 标签分配、开/关 | `Helper` ~ `Moderator`（分见下表） |
+| `management.bans`            | 封禁管理           | `Moderator`                  |
+| `management.audit_logs`      | 主站审计日志查询       | `Moderator`                  |
 
 > 身份组与系统角色的**写入**（分配/变更）在后台 [/management/console](console/index.md)，本端点仅读出。
 
 Issue 相关操作的角色映射：
 
-| 操作 | 端点 | 权限节点 | 默认角色 |
-|------|------|----------|----------|
-| 标签创建/删除 | 后台 console | `issues.labels.manage` | `Admin`（管理） |
-| 给议题分配标签 | `/management/issues/{id}/labels` | `issues.labels.assign` | `Helper`（协管） |
-| 议题打开/关闭（带原因） | `/management/issues/{id}/state` | `management.issues` | `Moderator`（版主） |
-| 查看私有议题 | — | `issues.private_read` | —（仅授予） |
+| 操作           | 端点                               | 权限节点                   | 默认角色            |
+|--------------|----------------------------------|------------------------|-----------------|
+| 标签创建/删除      | 后台 console                       | `issues.labels.manage` | `Admin`（管理）     |
+| 给议题分配标签      | `/management/issues/{id}/labels` | `issues.labels.assign` | `Helper`（协管）    |
+| 议题打开/关闭（带原因） | `/management/issues/{id}/state`  | `management.issues`    | `Moderator`（版主） |
+| 查看私有议题       | —                                | `issues.private_read`  | —（仅授予）          |
 
 ---
 
@@ -119,7 +119,7 @@ Issue 相关操作的角色映射：
 
 ## 投票管理
 
-用户的投票交互见 [/votes](../votes.md)。本端点管理投票的创建与数据查看。
+用户的投票交互见 [/votes](../EP-votes.md)。本端点管理投票的创建与数据查看。
 
 ### POST /management/votes
 
@@ -182,7 +182,7 @@ Issue 相关操作的角色映射：
 
 ## Issue 管理
 
-管理侧管理议题的标签分配与开/关。用户侧创建/浏览/评论见 [/issues](../issues.md)。数据模型见 [SQL.md](../SQL.md#issue议题)。
+管理侧管理议题的标签分配与开/关。用户侧创建/浏览/评论见 [/issues](../EP-issues.md)。数据模型见 [SQL.md](../SQL.md#issue议题)。
 
 ### POST /management/issues/{issueId}/labels
 
@@ -338,16 +338,16 @@ Issue 相关操作的角色映射：
 - `action` 取值见下表。
 - 先业务后审计；只记鉴权层面拒绝；记录操作者 IP。
 
-| action | 对应接口 |
-|--------|----------|
-| `user.ban` | POST /management/bans |
-| `user.ban_delete` | DELETE /management/bans/{userId} |
-| `profile.rename` | PATCH /management/yggdrasil/profiles/{profileId} |
-| `profile.delete` | DELETE /management/yggdrasil/profiles/{profileId} |
-| `texture.delete` | DELETE /management/yggdrasil/textures/{hash} |
-| `user.role_change` | 后台系统角色变更 |
-| `identity.group_assign` | 后台身份组分配 |
-| `user.notification` | 后台发送站内通知 |
-| `system.announcement` | 后台发布全站公告 |
+| action                  | 对应接口                                              |
+|-------------------------|---------------------------------------------------|
+| `user.ban`              | POST /management/bans                             |
+| `user.ban_delete`       | DELETE /management/bans/{userId}                  |
+| `profile.rename`        | PATCH /management/yggdrasil/profiles/{profileId}  |
+| `profile.delete`        | DELETE /management/yggdrasil/profiles/{profileId} |
+| `texture.delete`        | DELETE /management/yggdrasil/textures/{hash}      |
+| `user.role_change`      | 后台系统角色变更                                          |
+| `identity.group_assign` | 后台身份组分配                                           |
+| `user.notification`     | 后台发送站内通知                                          |
+| `system.announcement`   | 后台发布全站公告                                          |
 
 后台操作的审计见 [后台审计日志](console/index.md#get-managementconsoleaudit-logs)。

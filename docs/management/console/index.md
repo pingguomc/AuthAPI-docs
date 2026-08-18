@@ -19,18 +19,18 @@
 
 ## 命令概览
 
-| 端点 | 后台级别要求 |
-|------|------------|
-| auth/login、logout、me | 已登录 admin（任意级别） |
-| users/{userId}/roles（变更系统角色） | `super_admin` |
-| identity-groups 增删改 / 分配移除 | `super_admin` |
-| identity-groups 读取 | `admin`（任意级别） |
-| notifications（发站内通知） | `admin`（任意级别） |
-| announcements（发全站公告） | `super_admin` |
-| labels（标签建/删，系统角色 Admin） | `admin`（任意级别） |
-| prefixes（前缀预设建/删） | `super_admin` |
-| reload（配置热重载） | `super_admin` |
-| audit-logs（后台审计） | `admin`（任意级别） |
+| 端点                           | 后台级别要求          |
+|------------------------------|-----------------|
+| auth/login、logout、me         | 已登录 admin（任意级别） |
+| users/{userId}/roles（变更系统角色） | `super_admin`   |
+| identity-groups 增删改 / 分配移除   | `super_admin`   |
+| identity-groups 读取           | `admin`（任意级别）   |
+| notifications（发站内通知）         | `admin`（任意级别）   |
+| announcements（发全站公告）         | `super_admin`   |
+| labels（标签建/删，系统角色 Admin）     | `admin`（任意级别）   |
+| prefixes（前缀预设建/删）            | `super_admin`   |
+| reload（配置热重载）                | `super_admin`   |
+| audit-logs（后台审计）             | `admin`（任意级别）   |
 
 ## 目录
 
@@ -111,7 +111,6 @@
   "username": "user_be08...",
   "role": "admin", // 主站系统角色
   "consoleRole": "super_admin", // 后台级别
-  "jwtJti": "s_01H..."
 }
 ```
 
@@ -463,14 +462,14 @@ Issue 标签的创建 / 删除由系统角色 `Admin` 完成；分配标签给�
 
 **备注**：`action` 取值参考下表：
 
-| action | 说明 |
-|--------|------|
-| `console.login` / `console.logout` | 后台登录 / 登出 |
-| `console.role_change` | 变更用户系统角色 |
-| `console.group_create` / `console.group_rename` / `console.group_delete` | 身份组增删改 |
-| `console.group_assign` / `console.group_remove` | 分配 / 移除身份组 |
-| `console.notification_send` | 发站内通知 |
-| `console.announcement_publish` | 发全站公告 |
-| `console.reload` | 配置热重载 |
+| action                                                                   | 说明         |
+|--------------------------------------------------------------------------|------------|
+| `console.login` / `console.logout`                                       | 后台登录 / 登出  |
+| `console.role_change`                                                    | 变更用户系统角色   |
+| `console.group_create` / `console.group_rename` / `console.group_delete` | 身份组增删改     |
+| `console.group_assign` / `console.group_remove`                          | 分配 / 移除身份组 |
+| `console.notification_send`                                              | 发站内通知      |
+| `console.announcement_publish`                                           | 发全站公告      |
+| `console.reload`                                                         | 配置热重载      |
 
 主站操作审计见 [主站审计日志](../index.md#审计日志)。

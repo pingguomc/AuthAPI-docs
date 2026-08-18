@@ -17,7 +17,7 @@
    - [GET /user/oidc/{providerId}/bind (Cookie身份验证)](#get-useroidcprovideridbind-cookie身份验证)
    - [GET /user/oidc/{providerId}/callback](#get-useroidcprovideridcallback)
    - [DELETE /user/oidc/{providerId} (Cookie身份验证)](#delete-useroidcproviderid-cookie身份验证)
-- [通知与全站公告](#通知与全站公告cookie身份验证)
+- [通知与全站公告](#通知与公告-cookie身份验证)
    - [GET /user/notifications](#get-usernotifications)
    - [PUT /user/notifications/{id}/read](#put-usernotificationsidread)
    - [GET /user/announcements](#get-userannouncements)
@@ -32,7 +32,7 @@
   "email": "user@example.com",
   "password": "Abc123",
   "emailCode": "123456",
-  "displayName": "显示的用户名"
+  "username": "用户名"
 }
 ```
 
@@ -61,6 +61,13 @@
 {
   "email": "user@example.com",
   "emailCode": "123456"
+}
+```
+或
+```json5
+{
+  "username": "用户名",
+  "password": "Abc123"
 }
 ```
 
@@ -286,7 +293,7 @@ OIDC 相关的用户操作端点。
 }
 ```
 
-## 通知与公告（Cookie身份验证）
+## 通知与公告 (Cookie身份验证)
 
 ### GET /user/notifications
 

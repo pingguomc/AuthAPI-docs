@@ -9,11 +9,11 @@
 - [user 端点](EP-user.md)
 - [email 端点](EP-email.md)
 - [management 端点](management/index.md)
-- [management users 端点](management/users.md)
-- [management yggdrasil 端点](management/yggdrasil.md)
+- [management users 端点](management/EP-users.md)
+- [management yggdrasil 端点](management/EP-yggdrasil.md)
 - [management console 后台端点](management/console/index.md)
-- [votes 投票端点](votes.md)
-- [issues 议题端点](issues.md)
+- [votes 投票端点](EP-votes.md)
+- [issues 议题端点](EP-issues.md)
 - [captcha 端点](EP-captcha.md)
 - [错误码速查表](./error.md)
 - [数据库表结构（SQL）](./SQL.md)
@@ -88,7 +88,7 @@ Http 状态码按通用约定返回。
 #### 用户展示
 
 用户前端展示格式为 `[前缀]username[身份组][系统角色]`，不再使用 `display_name`（保留字段，一律展示 `username`）。  
-前缀由系统**统一管理**：前缀预设由后台 SuperAdmin 维护，由版主（Moderator）在 `/management` 分配给用户，用户不能自行设置。
+前缀由系统**统一管理**：前缀预设由后台 SuperAdmin 维护，由版主（Moderator）以上角色在 `/management` 分配给用户，用户不能自行设置。
 
 ### 审计日志
 

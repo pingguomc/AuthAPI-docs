@@ -10,8 +10,8 @@
 
 - [GET /votes](#get-votes)
 - [GET /votes/{voteId}](#get-votesvoteid)
-- [POST /votes/{voteId}/answer](#post-votesvoteid-answer)
-- [GET /votes/{voteId}/me](#get-votesvoteid-me)
+- [POST /votes/{voteId}/answer](#post-votesvoteidanswer)
+- [GET /votes/{voteId}/me](#get-votesvoteidme)
 
 ---
 
@@ -81,6 +81,8 @@
 ```json5
 // single
 { "optionId": "vo_01H..." }
+```
+```json5
 // multiple
 { "optionIds": ["vo_01H...", "vo_02H..."] }
 ```
