@@ -1,6 +1,6 @@
 # 签名密钥对
 
-本文件不是API 端点文件，而且为了不用同时参考两个文档编写代码。因此直接照搬了 [Yggdrasil-服务端技术规范](https://yushijinhun.github.io/authlib-injector/zh/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83.html)。
+本文件不是 API 端点文件，而是为了不用同时参考两个文档编写代码。因此直接照搬了 [Yggdrasil-服务端技术规范](https://yushijinhun.github.io/authlib-injector/zh/Yggdrasil-%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8A%80%E6%9C%AF%E8%A7%84%E8%8C%83.html)。
 
 ## 目录
 

@@ -8,7 +8,7 @@
 
 - [user 端点](EP-user.md)
 - [email 端点](EP-email.md)
-- [admin 端点](EP-admin.md)
+- [management 端点](management/index.md)
 - [captcha 端点](EP-captcha.md)
 - [错误码速查表](./error.md)
 - [数据库表结构（SQL）](./SQL.md)
@@ -64,7 +64,7 @@ Http 状态码按通用约定返回。
 
 ### 系统角色、权限模型、用户身份
 
-系统角色依次为：`User` 用户、`Helper` 协管、`Moderator` 版主、`Admin` 管理。  
+系统角色依次为：`User` 用户、`Helper` 协管、`Moderator` 版主、`Admin` 管理员。  
 系统角色层级为 User < Helper < Moderator < Admin。
 
 权限为权限节点式，凡是需要权限的端点都在端点中标记出来，权限检查以是否拥有权限节点为准。

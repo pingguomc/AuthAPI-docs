@@ -72,7 +72,7 @@
 ```json5
 {
   "userId": "be081dbc-3de9-4138-9e13-3cbc5439dd4a", // 随机示例
-  "role": "user", // 角色,取值参考 EP-admin.md 数据模型
+  "role": "user", // 角色,取值参考 ./index.md 系统角色与权限模型
   "displayName": "展示的用户名",
   "email": "绑定的邮箱", // 可能为空字符串
   "hasPassword": false, // 是否已设置密码

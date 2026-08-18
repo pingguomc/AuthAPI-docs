@@ -1,6 +1,6 @@
-# 端点： /management
+# 端点：/management
 
-本端点全部需要身份验证,采用 [Cookie HttpOnly 会话](./index.md#cookie-格式)。
+本端点全部需要身份验证,采用 [Cookie HttpOnly 会话](../index.md#cookie-格式)。
 
 访问本端点下的任意接口要求会话用户拥有每个节点指定的权限，否则返回 `403`。
 
@@ -83,7 +83,7 @@
   "lastLoginIp": "203.0.113.1",
   "registerIp": "203.0.113.1",
   "createdAt": "2026-08-08T10:30:00Z",
-  "oidcBindings": [  //参见 ./EP-user.md#端点useroidc
+  "oidcBindings": [  //参见 ../EP-user.md#端点useroidc
     {
       "providerId": "github",
       "boundAt": "2026-08-08T10:30:00Z"

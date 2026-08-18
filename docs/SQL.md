@@ -12,7 +12,7 @@
 | username      | 唯一，不为空，默认"user_它的id"                                     | 只是用户名而已 |
 | display_name  |                                                          | 仅展示使用   |
 | role          | 枚举("user","helper","moderator","admin")，<br>不为空，默认"user" | 系统角色    |
-| perfix        |                                                          | 预留字段，无用 |
+| prefix        |                                                          | 预留字段，无用 |
 | last_login_at |                                                          | 最后登录时间  |
 | created_at    | 不为空                                                      | 注册时间    |
 | updated_at    | 不为空                                                      | 更新时间    |
