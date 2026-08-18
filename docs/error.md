@@ -34,17 +34,17 @@
 | **404** |     `EmailNotRegistered`      | 该邮箱未注册                            | `POST /email/code/login`                                                                                   |
 | **404** |      `ProviderNotFound`       | 不支持该 OIDC 提供商                     | `GET /user/oidc/{providerId}/*`                                                                            |
 | **404** |      `ProviderNotBound`       | 未绑定该 OIDC 提供商                     | `DELETE /user/oidc/{providerId}`                                                                           |
-| **404** |        `UserNotFound`         | 用户不存在                             | `GET /management/users/{userId}`、`POST /management/bans`、`POST /management/yggdrasil/tokens/revoke-all` |
+| **404** |        `UserNotFound`         | 用户不存在                             | `GET /management/users/{userId}`、`POST /management/bans` |
 | **404** |      `ProfileNotFound`        | 角色不存在                             | `GET/PATCH/DELETE /management/yggdrasil/profiles/{profileId}` |
-| **404** |   `LauncherSessionNotFound`   | 启动器会话不存在                        | `GET/DELETE /management/yggdrasil/launcher-sessions/{launcherSessionId}`、`POST /management/yggdrasil/launcher-sessions/{launcherSessionId}/reset-password` |
-| **404** |        `TokenNotFound`        | 令牌不存在                             | `DELETE /management/yggdrasil/tokens/{accessToken}` |
 | **404** |      `TextureNotFound`        | 材质不存在                             | `DELETE /management/yggdrasil/textures/{hash}` |
-| **404** |  `PermissionGrantNotFound`   | 未找到该权限授予                          | `DELETE /management/console/permission-grants/{userId}/{node}` |
+| **404** |        `GroupNotFound`        | 身份组不存在                           | `PATCH/DELETE /management/console/identity-groups/{groupId}`、`DELETE /management/console/users/{userId}/groups/{groupId}` |
+| **404** |     `GroupNotAssigned`        | 该用户未分配此身份组                      | `DELETE /management/console/users/{userId}/groups/{groupId}` |
 | **404** |         `BanNotFound`         | 未找到该用户的封禁记录                       | `GET/DELETE /management/bans/{userId}` |
-| **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /management/bans`                                                                                         |
-| **409** |    `ProfileNameTaken`        | 角色名称已被占用                          | `PATCH /management/yggdrasil/profiles/{profileId}`                                                              |
-| **409** |    `TextureInUse`            | 材质仍被角色引用，不可删除                    | `DELETE /management/yggdrasil/textures/{hash}`                                                             |
-| **409** | `PermissionAlreadyGranted`  | 该用户已拥有此权限节点                       | `POST /management/console/permission-grants`                                                            |
+| **409** |      `BanAlreadyExists`       | 该用户已有生效中的封禁记录                     | `POST /management/bans` |
+| **409** |    `ProfileNameTaken`         | 角色名称已被占用                          | `PATCH /management/yggdrasil/profiles/{profileId}` |
+| **409** |    `TextureInUse`             | 材质仍被角色引用，不可删除                    | `DELETE /management/yggdrasil/textures/{hash}` |
+| **409** |    `GroupNameTaken`           | 身份组名称已被占用                         | `POST /management/console/identity-groups`、`PATCH /management/console/identity-groups/{groupId}` |
+| **409** |    `GroupAlreadyAssigned`     | 该用户已分配此身份组                       | `POST /management/console/users/{userId}/groups` |
 | **409** |   `EmailAlreadyRegistered`    | 该邮箱已被注册                           | `POST /user/register`、`POST /email/code/register`、`PUT /user/email`                                        |
 | **409** |    `ProviderAlreadyBound`     | 该账号已绑定其他用户                        | `GET /user/oidc/{providerId}/callback`（bind 场景）                                                            |
 | **429** |    `EmailCodeRateLimited`     | 验证码发送过于频繁，请稍后再试                   | `POST /email/code/*`                                                                                       |

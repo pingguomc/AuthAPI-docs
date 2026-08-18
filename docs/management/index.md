@@ -2,87 +2,67 @@
 
 主站管理端点。本端点全部需要身份验证，采用 [Cookie HttpOnly 会话](../index.md#cookie-格式)。
 
-访问本端点下的任意接口要求会话用户拥有每个节点指定的**权限节点**，否则返回 `403`。
+## 权限
 
-## 权限节点
+访问本端点下的任意接口要求会话用户拥有对应的**权限节点**，否则返回 `403`，`error` 为 `Forbidden`。
 
-权限节点为权限检查的最小单位，见 [系统角色、权限模型、用户身份](../index.md#系统角色权限模型用户身份)。下表列出本端点涉及的节点及默认拥有角色（缺省为 `Moderator`）。
+权限判断采用并行双模型，实际节点 = 系统角色内建节点 ∪ 所属身份组节点，见 [权限体系](../SQL.md#权限体系说明)。下表列出本端点涉及的节点及默认拥有它的最低系统角色（缺省为 `Moderator`）。
 
-| 权限节点 | 说明 | 默认拥有角色 |
+| 权限节点 | 说明 | 默认最低系统角色 |
 |-----------|------|-----------|
 | `management.users` | 用户列表 / 详情 | `Moderator` |
-| `management.yggdrasil.launcher_sessions` | 启动器会话管理 | `Moderator` |
+| `management.identity_groups` | 身份组列表 | `Moderator` |
 | `management.yggdrasil.profiles` | 角色管理 | `Moderator` |
-| `management.yggdrasil.tokens` | 令牌管理 | `Moderator` |
 | `management.yggdrasil.textures` | 材质管理 | `Moderator` |
 | `management.bans` | 封禁管理 | `Moderator` |
 | `management.audit_logs` | 主站审计日志查询 | `Moderator` |
 
-若未拥有对应权限节点，返回 `403`，`error` 为 `Forbidden`。
+> 身份组与系统角色的**写入**（分配/变更）在后台 [/management/console](console/index.md)，本端点仅读出。
 
 ## 目录
 
 - [用户管理](#用户管理)
   - [GET /management/users](#get-managementusers)
   - [GET /management/users/{userId}](#get-managementusersuserid)
+- [身份组](#身份组)
+  - [GET /management/identity-groups](#get-managementidentity-groups)
 - [Yggdrasil 管理](#yggdrasil-管理)
-  - [启动器会话](#启动器会话)
-    - [GET /management/yggdrasil/launcher-sessions](#get-managementyggdrasillauncher-sessions)
-    - [GET /management/yggdrasil/launcher-sessions/{launcherSessionId}](#get-managementyggdrasillauncher-sessionslaunchersessionid)
-    - [DELETE /management/yggdrasil/launcher-sessions/{launcherSessionId}](#delete-managementyggdrasillauncher-sessionslaunchersessionid)
-    - [POST /management/yggdrasil/launcher-sessions/{launcherSessionId}/reset-password](#post-managementyggdrasillauncher-sessionslaunchersessionidreset-password)
-  - 涉及令牌的批量吊销见 [令牌管理](#令牌管理)
   - [角色](#角色)
-    - [GET /management/yggdrasil/profiles](#get-managementyggdrasilprofiles)
-    - [GET /management/yggdrasil/profiles/{profileId}](#get-managementyggdrasilprofilesprofileid)
-    - [PATCH /management/yggdrasil/profiles/{profileId}](#patch-managementyggdrasilprofilesprofileid)
-    - [DELETE /management/yggdrasil/profiles/{profileId}](#delete-managementyggdrasilprofilesprofileid)
-  - [令牌](#令牌)
-    - [GET /management/yggdrasil/tokens](#get-managementyggdrasiltokens)
-    - [DELETE /management/yggdrasil/tokens/{accessToken}](#delete-managementyggdrasiltokensaccesstoken)
-    - [POST /management/yggdrasil/tokens/revoke-all](#post-managementyggdrasiltokensrevoke-all)
   - [材质](#材质)
-    - [GET /management/yggdrasil/textures](#get-managementyggdrasiltextures)
-    - [DELETE /management/yggdrasil/textures/{hash}](#delete-managementyggdrasiltextureshash)
 - [封禁](#封禁)
-  - [POST /management/bans](#post-managementbans)
-  - [GET /management/bans](#get-managementbans)
-  - [GET /management/bans/{userId}](#get-managementbansuserid)
-  - [DELETE /management/bans/{userId}](#delete-managementbansuserid)
 - [审计日志](#审计日志)
-  - [GET /management/audit-logs](#get-managementaudit-logs)
 
 ---
 
 ## 用户管理
 
-需要权限节点 `management.users`。
+需要权限节点 `management.users`。接口为**只读**（列表 / 详情），用户字段的修改见对应端点（系统角色、身份组在后台；前缀见 `EP-user.md`）。
 
 ### GET /management/users
 
 用户列表。
 
+**权限**：`management.users`，默认最低系统角色 `Moderator`。
+
 **请求**：无请求体，查询参数如下：
 
-| 参数                 | 类型     | 说明                                           |
-|--------------------|--------|----------------------------------------------|
-| `page`             | int    | 页码，从 1 开始，默认 1                               |
-| `pageSize`         | int    | 每页条数，默认 20，上限 100                            |
-| `q`                | string | 邮箱精确匹配 **或** 用户名前缀匹配，不做全文模糊                  |
-| `role`             | string | 按系统角色筛选                                      |
-| `status`           | string | 按状态筛选（`active`/`banned`，由 banned 即时计算）       |
-| `registeredAfter`  | string | 注册时间下界，ISO 8601 UTC                          |
-| `registeredBefore` | string | 注册时间上界，ISO 8601 UTC                          |
-| `sortBy`           | string | 仅接受 `createdAt`、`lastLoginAt`，默认 `createdAt` |
-| `order`            | string | `asc` / `desc`，默认 `desc`                     |
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `page` | int | 页码，默认 1 |
+| `pageSize` | int | 每页条数，默认 20，上限 100 |
+| `q` | string | 邮箱精确匹配 **或** 用户名前缀匹配，不做全文模糊 |
+| `role` | string | 按系统角色筛选 |
+| `status` | string | `active` / `banned`（由 bans 即时计算） |
+| `registeredAfter` | string | 注册时间下界，ISO 8601 UTC |
+| `registeredBefore` | string | 注册时间上界，ISO 8601 UTC |
+| `sortBy` | string | 仅 `createdAt`、`lastLoginAt`，默认 `createdAt` |
+| `order` | string | `asc` / `desc`，默认 `desc` |
 
-`sortBy` 取值不在白名单内返回 `400`。
-
-**响应**：成功返回 HTTP 状态码 `200`，响应体如下：
+**响应**：
 
 ```json5
 {
-  "total": 1234, // 符合条件的总数
+  "total": 1234,
   "page": 1,
   "pageSize": 20,
   "users": [
@@ -90,139 +70,94 @@
       "id": "be081dbc-3de9-4138-9e13-3cbc5439dd4a",
       "username": "user_be08...",
       "email": "user@example.com",
-      "role": "user",
-      "status": "active", // banned / active（即时计算）
-      "bannedUntil": null, // 封禁中则为时间，否则 null
-      "lastLoginAt": "2026-08-08T10:30:00Z", // 从未登录为 null
+      "role": "user", // 系统角色（非空）
+      "prefix": "[前缀]", // 显示前缀（可空）
+      "groups": ["groupA", "groupB"], // 所属身份组名（可为空）
+      "status": "active",
+      "bannedUntil": null,
+      "lastLoginAt": "2026-08-08T10:30:00Z",
       "createdAt": "2026-08-08T10:30:00Z"
     }
-    // ...
   ]
 }
 ```
 
+**后端处理**：`role` / `status` 筛选均按即时值计算。
+
 **备注**：
-- 列表不返回 IP 类字段与 OIDC 绑定、启动器会话等关联信息，仅在对应详情接口提供。
-- `status = banned` 查询命中条件为：存在 `bans` 记录且 `ban_until IS NULL OR ban_until > now()`。
+- 列表不返回 IP、OIDC 绑定等关联信息，仅在详情接口提供。
+- 展示名一律用 `username`，显示格式 `[prefix]username[groups][role]`。
 
 ### GET /management/users/{userId}
 
 用户详情。
 
-**请求体**：无。
+**权限**：`management.users`，默认最低系统角色 `Moderator`。
 
-**响应**：成功返回 HTTP 状态码 `200`：
+**请求**：无请求体。
+
+**响应**：
 
 ```json5
 {
   "id": "be081dbc-3de9-4138-9e13-3cbc5439dd4a",
-  "displayName": "显示的用户名",
+  "username": "user_be08...",
   "email": "user@example.com",
-  "role": "user",
+  "role": "user", // 系统角色（非空）
+  "prefix": "[前缀]", // 可空
+  "identityGroups": [ // 所属身份组详情（可空）
+    { "id": "g_01H...", "name": "groupA", "displayName": "Group A" }
+  ],
   "status": "active",
   "bannedUntil": null,
   "lastLoginAt": "2026-08-08T10:30:00Z",
   "lastLoginIp": "203.0.113.1",
   "registerIp": "203.0.113.1",
-  "permissions": [ // 该用户额外授予的权限节点（不含角色内建节点）
-    "management.users"
-  ],
   "createdAt": "2026-08-08T10:30:00Z",
-  "launcherSessions": [ // 见 ../EP-server 关联文档；此处为摘要
-    { "id": "7661e3a4-...", "email": "a1b2c3@example.com", "profileId": "..." }
-  ],
   "oidcBindings": [ // 参见 ../EP-user.md#端点useroidc
-    {
-      "providerId": "github",
-      "boundAt": "2026-08-08T10:30:00Z"
-    }
+    { "providerId": "github", "boundAt": "2026-08-08T10:30:00Z" }
   ]
 }
 ```
 
-用户不存在返回 `404`，`error` 为 `UserNotFound`。
+**备注**：用户不存在返回 `404`，`error` 为 `UserNotFound`。
+
+---
+
+## 身份组
+
+需要权限节点 `management.identity_groups`。该端点仅**读出**身份组信息，组的创建/改名/删除与用户分配在后台 [/management/console](console/index.md)。
+
+### GET /management/identity-groups
+
+身份组列表。
+
+**权限**：`management.identity_groups`，默认最低系统角色 `Moderator`。
+
+**请求**：无请求体，查询参数 `page` / `pageSize`（可选）。
+
+**响应**：
+
+```json5
+{
+  "total": 5,
+  "page": 1,
+  "pageSize": 20,
+  "groups": [
+    { "id": "g_01H...", "name": "groupA", "displayName": "Group A" }
+  ]
+}
+```
+
+**备注**：身份组的权限节点列表由配置文件定义，本接口不返回权限节点。
 
 ---
 
 ## Yggdrasil 管理
 
-Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理，数据模型见 [SQL.md](../SQL.md) 的 `yggdrasil_*` 表，业务语义见 [yggdrasil/index.md](../yggdrasil/index.md)。
+管理 Yggdrasil 角色与材质资源，数据模型见 [SQL.md](../SQL.md) 的 `yggdrasil_*` 表。
 
-### 启动器会话
-
-#### GET /management/yggdrasil/launcher-sessions
-
-启动器会话列表。
-
-**请求体**：无。查询参数：
-
-| 参数         | 类型         | 说明                |
-|------------|------------|-------------------|
-| `userId`   | string（可选） | 按所属账号筛选           |
-| `page`     | int        | 页码，默认 1           |
-| `pageSize` | int        | 每页条数，默认 20，上限 100 |
-
-**响应**：`200`：
-
-```json5
-{
-  "total": 12,
-  "page": 1,
-  "pageSize": 20,
-  "items": [
-    {
-      "id": "766e3a4e-...",
-      "userId": "be081dbc-...",
-      "email": "a1b2c3@example.com", // 启动器会话登录名
-      "profileId": "7b3f0c2f-...",
-      "profileName": "Steve",
-      "createdAt": "2026-08-08T10:30:00Z"
-    }
-    // ...
-  ]
-}
-```
-
-#### GET /management/yggdrasil/launcher-sessions/{launcherSessionId}
-
-单个启动器会话详情。
-
-**响应**：`200`，结构同列表项，另含：
-
-```json5
-{
-  "id": "a1b2c3d4-...",
-  "userId": "be081798-...",
-  "email": "a1b2c3@example.com",
-  "profileId": "7b3f0c2f-...",
-  "createdAt": "2026-08-08T10:30:00Z"
-}
-```
-
-不存在返回 `404`，`error` 为 `LauncherSessionNotFound`。
-
-#### DELETE /management/yggdrasil/launcher-sessions/{launcherSessionId}
-
-删除启动器会话，并吊销其关联的**全部令牌**。
-
-**响应**：`204`，无响应体。
-
-**备注**：删除后该会话无法再登录。不存在返回 `404`，`error` 为 `LauncherSessionNotFound`。
-
-#### POST /management/yggdrasil/launcher-sessions/{launcherSessionId}/reset-password
-
-重置启动器会话认证凭据（生成新的随机密码）。
-
-**响应**：`200`：
-
-```json5
-{
-  "id": "a1b2c3d4-...",
-  "password": "f81d4fae-..." // 新凭据，仅此一次返回
-}
-```
-
-**备注**：重置后应同步吊销该会话的既有令牌以保证旧凭据失效。不存在返回 `404`。
+> 去除了旧的“启动器会话管理”与“令牌管理”，令牌不落库，故不在此提供管理端点。
 
 ### 角色
 
@@ -230,13 +165,9 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
 
 角色列表。
 
-**请求参数**：
+**权限**：`management.yggdrasil.profiles`，默认最低系统角色 `Moderator`。
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `userId` | string（可选） | 按所属账号筛选 |
-| `page` | int | 页码，默认 1 |
-| `pageSize` | int | 每页条数，默认 20，上限 100 |
+**请求参数**：`userId`（可选）、`page` / `pageSize`。
 
 **响应**：`200`：
 
@@ -248,13 +179,12 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
   "items": [
     {
       "id": "7b3f0c2f-...",
-      "userId": "be081798-...",
+      "userId": "be081dbc-...",
       "name": "Steve",
       "model": "slim",
       "createdAt": "2026-08-08T10:30:00Z",
       "updatedAt": "2026-08-08T10:30:00Z"
     }
-    // ...
   ]
 }
 ```
@@ -263,15 +193,17 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
 
 角色详情。
 
-**响应**：`200`，返回：
+**权限**：`management.yggdrasil.profiles`，默认最低系统角色 `Moderator`。
+
+**响应**：
 
 ```json5
 {
   "id": "7b3f0c2f-...",
-  "userId": "be081798-...",
+  "userId": "be081dbc-...",
   "name": "Steve",
   "model": "slim",
-  "textures": [ // 已上传材质（SKIN/CAPE）
+  "textures": [
     { "textureType": "skin", "hash": "e051c27e...", "model": "slim" }
   ],
   "createdAt": "2026-08-08T10:30:00Z",
@@ -279,13 +211,15 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
 }
 ```
 
-不存在返回 `404`，`error` 为 `ProfileNotFound`。
+**备注**：不存在返回 `404`，`error` 为 `ProfileNotFound`。
 
 #### PATCH /management/yggdrasil/profiles/{profileId}
 
 角色改名（名称全局唯一）。
 
-**请求体**：
+**权限**：`management.yggdrasil.profiles`，默认最低系统角色 `Moderator`。
+
+**请求**：
 
 ```json5
 {
@@ -293,105 +227,33 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
 }
 ```
 
-**响应**：`200`，返回新的角色信息。
+**响应**：`200`，返回更新后的角色信息。
 
 **备注**：
 - 名称已存在返回 `409`，`error` 为 `ProfileNameTaken`。
-- 改名后，绑定该角色的令牌应被标记为**暂时失效**（`invalid_until`），令启动器刷新令牌以获取新名称。
+- 改名后，绑定该角色的令牌（缓存）应标为**暂时失效**，令启动器刷新令牌以获取新名称。
 
 #### DELETE /management/yggdrasil/profiles/{profileId}
 
-删除角色。删除后其绑定的启动器会话、令牌、材质一并失效/清理。
+删除角色。删除后其材质一并清理。
+
+**权限**：`management.yggdrasil.profiles`，默认最低系统角色 `Moderator`。
+
+**请求**：无请求体。
 
 **响应**：`204`。
 
 **备注**：不存在返回 `404`，`error` 为 `ProfileNotFound`。
 
-### 令牌
-
-> 令牌分布在不同启动器会话下，管理端可跨会话操作。
-
-#### GET /management/yggdrasil/tokens
-
-令牌列表。
-
-**请求参数**：
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `userId` | string（可选） | 按所属账号筛选 |
-| `launcherSessionId` | string（可选） | 按启动器会话筛选 |
-| `state` | string（可选） | `valid` / `invalid` / `temporarily` |
-| `page` | int | 页码，默认 1 |
-| `pageSize` | int | 每页条数，默认 20，上限 100 |
-
-**响应**：`200`：
-
-```json5
-{
-  "total": 50,
-  "page": 1,
-  "pageSize": 20,
-  "items": [
-    {
-      "accessToken": "eyJ...", // accessToken 本身只作标识返回（不暴露到第三方）
-      "clientToken": "f3d1...",
-      "authRecordId": "a1b2c3d4-...",
-      "profileId": "7b3f0c2f-...",
-      "state": "valid",
-      "createdAt": "2026-08-01T10:00:00Z",
-      "expiresAt": "2026-08-16T10:00:00Z"
-    }
-    // ...
-  ]
-}
-```
-
-#### DELETE /management/yggdrasil/tokens/{accessToken}
-
-吊销单个令牌。
-
-**响应**：`204`。
-
-**备注**：不存在返回 `404`，`error` 为 `TokenNotFound`。
-
-#### POST /management/yggdrasil/tokens/revoke-all
-
-吊销指定账号的全部令牌（强制下线）。
-
-**请求体**：
-
-```json5
-{
-  "userId": "be081798-..." // 必填
-}
-```
-
-**响应**：`200`：
-
-```json5
-{
-  "userId": "be081798-...",
-  "revokedCount": 12
-}
-```
-
-**备注**：用户不存在返回 `404`，`error` 为 `UserNotFound`。
-
 ### 材质
 
 #### GET /management/yggdrasil/textures
 
-孤儿材质列表（引用的角色已删除、或文件无对应生产记录）。
+材质列表（默认孤儿材质：引用的角色已删除或文件无记录）。
 
-**请求参数**：
+**权限**：`management.yggdrasil.textures`，默认最低系统角色 `Moderator`。
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `profileId` | string（可选） | 按角色筛选 |
-| `orphanOnly` | bool | 仅孤儿材质，默认 `true` |
-| `page` | int | 页码，默认 1 |
-| `pageSize` | int | 每页条数，默认 20，上限 100 |
+**请求参数**：`profileId`（可选）、`orphanOnly`（默认 `true`）、`page` / `pageSize`。
 
 **响应**：`200`：
 
@@ -402,18 +264,22 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
   "pageSize": 20,
   "items": [
     { "hash": "e051c27e...", "textureType": "skin", "profileId": null, "orphan": true }
-    // ...
   ]
 }
 ```
 
 #### DELETE /management/yggdrasil/textures/{hash}
 
-删除材质文件（按 hash）。仅允许删除孤儿材质，已被角色引用的材质返回 `409`，`error` 为 `TextureInUse`。
+删除材质文件（按 hash）。仅允许删除孤儿材质。
 
-**响应**：`204`。
+**权限**：`management.yggdrasil.textures`，默认最低系统角色 `Moderator`。
 
-**备注**：不存在返回 `404`，`error` 为 `TextureNotFound`。
+**后端处理**：若材质仍被角色引用则拒绝。
+
+**响应**：
+- 成功：`204`。
+- 材质被引用：`409`，`error` 为 `TextureInUse`。
+- 不存在：`404`，`error` 为 `TextureNotFound`。
 
 ---
 
@@ -425,75 +291,72 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
 
 创建封禁。
 
-**请求体**：
+**权限**：`management.bans`，默认最低系统角色 `Moderator`。
+
+**请求**：
 
 ```json5
 {
-  "userId": "be081798-...",
-  "bannedUntil": "2026-09-01T00:00:00Z", // 解封时间，null 表示永久封禁
+  "userId": "be081dbc-...",
+  "bannedUntil": "2026-09-01T00:00:00Z", // null 表示永久封禁
   "reason": "违反社区规则" // 可选
 }
 ```
+
+**后端处理**：创建后吊销该用户全部令牌（强制下线），并写主站审计。
 
 **响应**：`201`：
 
 ```json5
 {
   "id": "ban_01H...",
-  "userId": "be081798-...",
+  "userId": "be081dbc-...",
   "bannedUntil": "2026-09-01T00:00:00Z",
   "reason": "违反社区规则",
-  "operatorId": "be081798-...",
+  "operatorId": "be081dbc-...",
   "createdAt": "2026-08-08T10:30:00Z"
 }
 ```
 
 **备注**：
 - 目标用户不存在返回 `404`，`error` 为 `UserNotFound`。
-- 该用户已有生效封禁记录返回 `409`，`error` 为 `BanAlreadyExists`。
-- 创建成功即吊销该用户全部令牌（强制下线），并写主站审计。
+- 该用户已有生效封禁返回 `409`，`error` 为 `BanAlreadyExists`。
 
 ### GET /management/bans
 
 封禁列表。
 
-**请求参数**：
+**权限**：`management.bans`，默认最低系统角色 `Moderator`。
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `active` | bool | 仅返回生效中的记录 |
-| `page` | int | 页码，默认 1 |
-| `pageSize` | int | 每页条数，默认 20，上限 100 |
+**请求参数**：`active`（可选）、`page` / `pageSize`。
 
-**响应**：`200`，按 `createdAt` 倒序：
-
-```json5
-{
-  "total": 42,
-  "page": 1,
-  "pageSize": 20,
-  "items": [
-    { "id": "ban_01H...", "userId": "...", "bannedUntil": null, "reason": "...", "operatorId": "...", "createdAt": "..." }
-    // ...
-  ]
-}
-```
+**响应**：`200`，按 `createdAt` 倒序，结构同 POST 响应的条目标。
 
 ### GET /management/bans/{userId}
 
 查询指定用户封禁状态。
 
-**响应**：`200`，返回该记录的封禁对象（结构同 POST 响应）；若被查询用户无封禁记录，返回 `404`，`error` 为 `BanNotFound`。
+**权限**：`management.bans`，默认最低系统角色 `Moderator`。
+
+**响应**：`200`，返回该用户的封禁对象；无封禁记录返回 `404`，`error` 为 `BanNotFound`。
 
 ### DELETE /management/bans/{userId}
 
-解封（物理删除封禁记录）。
+解封（删除封禁记录）。
 
-**请求体**（可选）：`{"reason": "申诉通过"}`
+**权限**：`management.bans`，默认最低系统角色 `Moderator`。
+
+**请求**（可选）：
+
+```json5
+{
+  "reason": "申诉通过"
+}
+```
 
 **响应**：`204`。
 
-**备注**：不存在该封禁记录返回 `404`，`error` 为 `BanNotFound`；解封后用户恢复 `active`。
+**备注**：无该记录返回 `404`，`error` 为 `BanNotFound`。
 
 ---
 
@@ -503,39 +366,27 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
 
 ### GET /management/audit-logs
 
-主站审计日志查询（**只读**，见 [audit_logs](../SQL.md#主站审计日志-audit_logs)）。
+主站审计日志查询（只读）。
 
-**请求参数**：
+**权限**：`management.audit_logs`，默认最低系统角色 `Moderator`。
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `operatorId` | string | 操作者 |
-| `targetUserId` | string | 操作对象 |
-| `action` | string | 动作，支持前缀匹配（如 `user.`） |
-| `result` | string | `success` / `denied` |
-| `from` | string | 时间下界，ISO 8601 UTC |
-| `to` | string | 时间上界，ISO 8601 UTC |
-| `page` | int | 页码，默认 1 |
-| `pageSize` | int | 每页条数，默认 20，上限 100 |
+**请求参数**：`operatorId`、`targetUserId`、`action`（前缀匹配）、`result`（`success` / `denied`）、`from`、`to`、`page` / `pageSize`。
 
-固定按 `createdAt` 倒序。
-
-**响应**：`200`：
+**响应**：`200`，按 `createdAt` 倒序：
 
 ```json5
 {
   "items": [
     {
       "id": "log_01H...",
-      "operatorId": "be081798-...",
+      "operatorId": "be081dbc-...",
       "action": "user.ban",
-      "targetUserId": "be081798-...",
+      "targetUserId": "be081dbc-...",
       "result": "success",
       "ip": "203.0.113.1",
-      "payload": { "bannedUntil": "2026-09-01T00:00:00Z", "reason": "违反社区规则" },
+      "payload": { "bannedUntil": "2026-09-01T00:00:00Z" },
       "createdAt": "2026-08-08T10:30:00Z"
     }
-    // ...
   ],
   "page": 1,
   "pageSize": 20,
@@ -543,22 +394,18 @@ Yggdrasil 相关资源（启动器会话、角色、令牌、材质）的管理�
 }
 ```
 
-**action 取值**（`资源.动作`）：
+**备注**：
+- `action` 取值见下表。
+- 先业务后审计；只记鉴权层面拒绝；记录操作者 IP。
 
 | action | 对应接口 |
 |--------|----------|
-| `user.ban` | [POST /management/bans](#post-managementbans) |
-| `user.ban_delete` | [DELETE /management/bans/{userId}](#delete-managementbansuserid) |
-| `launcher_session.delete` | 删除启动器会话 |
-| `launcher_session.reset_password` | 重置启动器会话凭据 |
-| `profile.rename` | 角色改名 |
-| `profile.delete` | 角色删除 |
-| `token.revoke` | 令牌吊销 |
-| `texture.delete` | 材质删除 |
-
-**写入规则**：
-- 先做**业务**，后写审计；审计写入失败则回滚业务。
-- 只记录鉴权层面的拒绝（权限不足等），普通 `400`/`404` 不写入。
-- 审计记录操作者 IP。
+| `user.ban` | POST /management/bans |
+| `user.ban_delete` | DELETE /management/bans/{userId} |
+| `profile.rename` | PATCH /management/yggdrasil/profiles/{profileId} |
+| `profile.delete` | DELETE /management/yggdrasil/profiles/{profileId} |
+| `texture.delete` | DELETE /management/yggdrasil/textures/{hash} |
+| `user.role_change` | 后台系统角色变更 |
+| `identity.group_assign` | 后台身份组分配 |
 
 后台操作的审计见 [后台审计日志](console/index.md#get-managementconsoleaudit-logs)。

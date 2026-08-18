@@ -8,6 +8,7 @@
    - [POST /user/register](#post-userregister)
    - [POST /user/login](#post-userlogin)
    - [GET /user/me (Cookie身份验证)](#get-userme-cookie身份验证)
+   - [PUT /user/prefix (Cookie身份验证)](#put-userprefix-cookie身份验证)
    - [POST /user/change-password (Cookie身份验证)](#post-userchange-password-cookie身份验证)
    - [PUT /user/email (Cookie身份验证)](#put-useremail-cookie身份验证)
    - [POST /user/logout (Cookie身份验证)](#post-userlogout-cookie身份验证)
@@ -72,13 +73,34 @@
 ```json5
 {
   "userId": "be081dbc-3de9-4138-9e13-3cbc5439dd4a", // 随机示例
-  "role": "user", // 角色,取值参考 ./index.md 系统角色与权限模型
-  "displayName": "展示的用户名",
+  "role": "user", // 系统角色（非空），取值参考 ./index.md 系统角色与权限模型
+  "prefix": "[前缀]", // 显示前缀，可为空
+  "identityGroups": [ // 所属身份组，可为空
+    { "id": "g_01H...", "name": "groupA", "displayName": "Group A" }
+  ],
+  "username": "user_be08...", // 对外展示一律用 username
   "email": "绑定的邮箱", // 可能为空字符串
   "hasPassword": false, // 是否已设置密码
   "bindingOIDC": ["google","github"] // 内容为 providerID，可能为空
 }
 ```
+
+## PUT /user/prefix (Cookie身份验证)
+
+修改显示前缀（用户自行修改，`prefix` 可设为空字符串清除）。
+
+**请求**：
+```json5
+{
+  "prefix": "[新前缀]"
+}
+```
+
+**响应**：成功返回 `204`，无响应体。
+
+**后端处理**：更新当前用户的 `prefix` 字段。
+
+**备注**：前缀仅作展示，不影响权限。
 
 ## POST /user/change-password (Cookie身份验证)
 
