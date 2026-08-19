@@ -8,6 +8,7 @@
    - [POST /user/register](#post-userregister)
    - [POST /user/login](#post-userlogin)
    - [GET /user/me (Cookie身份验证)](#get-userme-cookie身份验证)
+   - [PUT /user/me/prefix (Cookie身份验证)](#put-usermeprefix-cookie身份验证)
    - [POST /user/change-password (Cookie身份验证)](#post-userchange-password-cookie身份验证)
    - [PUT /user/email (Cookie身份验证)](#put-useremail-cookie身份验证)
    - [POST /user/logout (Cookie身份验证)](#post-userlogout-cookie身份验证)
@@ -17,6 +18,10 @@
    - [GET /user/oidc/{providerId}/bind (Cookie身份验证)](#get-useroidcprovideridbind-cookie身份验证)
    - [GET /user/oidc/{providerId}/callback](#get-useroidcprovideridcallback)
    - [DELETE /user/oidc/{providerId} (Cookie身份验证)](#delete-useroidcproviderid-cookie身份验证)
+- [通知与全站公告](#通知与公告-cookie身份验证)
+   - [GET /user/notifications](#get-usernotifications)
+   - [PUT /user/notifications/{id}/read](#put-usernotificationsidread)
+   - [GET /user/announcements](#get-userannouncements)
 
 ## POST /user/register
 
@@ -28,7 +33,7 @@
   "email": "user@example.com",
   "password": "Abc123",
   "emailCode": "123456",
-  "displayName": "显示的用户名"
+  "username": "用户名"
 }
 ```
 
@@ -39,7 +44,7 @@
 }
 ```
 
-**备注**：需校验邮箱是否已被注册。
+**备注**：需校验邮箱是否已被注册（`409 EmailAlreadyRegistered`）。用户名格式非法返回 `400 InvalidUsername`；用户名已被占用返回 `409 UsernameTaken`。
 
 ## POST /user/login
 
@@ -59,8 +64,17 @@
   "emailCode": "123456"
 }
 ```
+或
+```json5
+{
+  "username": "用户名",
+  "password": "Abc123"
+}
+```
 
 **响应**：成功返回HTTP状态码 `200`，通过 `Set-Cookie` 响应头下发会话凭据，无响应体。
+
+**备注**：账号级登录失败达到阈值时返回 `403 LoginLocked`（见 [速率限制](./ratelimit.md#账号登录失败锁定loginlocked)）；登录成功后对应失败计数清零。
 
 ## GET /user/me (Cookie身份验证)
 
@@ -68,17 +82,43 @@
 
 **请求**：请求体为空，凭据通过 Cookie 传递
 
-**响应**：
+**响应**：成功返回 `200`：
 ```json5
 {
   "userId": "be081dbc-3de9-4138-9e13-3cbc5439dd4a", // 随机示例
-  "role": "user", // 角色,取值参考 EP-admin.md 数据模型
-  "displayName": "展示的用户名",
+  "role": "user", // 系统角色（非空），取值参考 ./index.md 系统角色与权限模型
+  "prefixId": "p_01H...", // 当前佩戴的前缀 ID，可为 null（玩家可穿戴或不佩戴）
+  "prefixes": [ // 该用户持有的全部前缀（可为空）
+    { "id": "p_01H...", "value": "[VIP]", "displayName": "VIP 用户", "backgroundColor": "#ffcc00" }
+  ],
+  "identityGroups": [ // 所属身份组，可为空
+    { "id": "g_01H...", "name": "groupA", "displayName": "Group A" }
+  ],
+  "username": "user_be08...", // 对外展示一律用 username
   "email": "绑定的邮箱", // 可能为空字符串
   "hasPassword": false, // 是否已设置密码
   "bindingOIDC": ["google","github"] // 内容为 providerID，可能为空
 }
 ```
+
+## PUT /user/me/prefix (Cookie身份验证)
+
+选择当前**佩戴**的前缀（自身持有的多个前缀中选择一个，或置空不佩戴）。
+
+**请求**：
+```json5
+{ "prefixId": "p_01H..." } // 佩戴该前缀
+// 或 { "prefixId": null } // 不佩戴
+```
+
+**后端处理**：校验 `prefixId` 属于该用户已持有的前缀（`user_prefixes`），更新 `users.prefix_id`。
+
+**响应**：`200`，返回当前佩戴状态：
+```json5
+{ "prefixId": "p_01H..." } // 或 null
+```
+
+**备注**：前缀不属于该用户持有的返回 `404`，`error` 为 `PrefixNotGranted`；`prefixId` 取值非法/不在预设清单内返回 `400`、`error` 为 `InvalidPrefix`。
 
 ## POST /user/change-password (Cookie身份验证)
 
@@ -109,7 +149,8 @@
 
 **响应**：成功返回HTTP状态码 `204`，响应头 `Set-Cookie` 将 `sid` 设为过期，无响应体。
 
-**备注**：仅限登录的用户更改密码所用。忘记密码无法登录者可通过邮箱验证码或OIDC登录。
+**备注**：仅限登录的用户更改密码所用。忘记密码无法登录者可通过邮箱验证码或OIDC登录。  
+使用 `emailCode` 方式时，验证码由 `POST /email/code/change-password` 发送到该用户**当前绑定的邮箱**（所有权验证），仅凭 Cookie 身份关联，不接受前端指定收件人。
 
 ## PUT /user/email (Cookie身份验证)
 
@@ -135,6 +176,8 @@
   "email": "newemail@example.com"
 }
 ```
+
+**备注**：使用 `emailCode` 方式时，验证码由 `POST /email/code/set-email` 发送到**本次请求中的新邮箱**地址（新地址有效性验证），因此 `emailCode` 必须对应"发码时使用的那个新邮箱"。
 
 ## POST /user/logout (Cookie身份验证)
 
@@ -187,13 +230,15 @@ OIDC 相关的用户操作端点。
 | redirect_uri | 登录成功后跳回的前端页面地址（可选，须在白名单内；未传时使用后端配置的默认跳转地址） |
 
 **后端处理**：
-1. 生成随机 `state`，存入 session
-2. 生成随机 `code_verifier`（43~128 字符），存入 session
+1. 生成随机 `state`，写入缓存键 `oidc_state:{state}`（以 state 自身为 key，TTL 见下方）
+2. 生成随机 `code_verifier`（43~128 字符），一并写入该缓存条目
 3. 计算 `code_challenge = base64url(sha256(code_verifier))`
-4. 在 session 中标记 `action = "login"`
-5. 若前端传了 `redirect_uri`，校验其必须命中 `config/OIDC.toml` 的 `allowed_redirect_uris` 白名单（否则 403 拒绝发起流程）；将生效的跳转地址存入 session 作为回调后的跳转目标。未传时使用 `default_redirect_uri`（未配置则回调回退到根路径 `/`）
+4. 在该缓存条目中标记 `action = "login"`
+5. 若前端传了 `redirect_uri`，校验其必须命中 `config/OIDC.toml` 的 `allowed_redirect_uris` 白名单（否则 403 拒绝发起流程）；将生效的跳转地址一并写入缓存条目作为回调后的跳转目标。未传时使用 `default_redirect_uri`（未配置则回调回退到根路径 `/`）
    - 白名单匹配比较 `scheme + host:port + path`，**忽略 query 与 fragment**，因此可在 `redirect_uri` 中携带 `after` 等查询参数（例如传入 `http://localhost:5173/oidc/callback?after=/dashboard` 时，配置 `http://localhost:5173/oidc/callback` 即可命中）
 6. 构造 Provider 授权 URL，附加 `code_challenge` 和 `code_challenge_method=S256`，302 重定向
+
+> 授权流程上下文（`code_verifier`、`action`、生效跳转地址）统一存于缓存 `oidc_state:{state}`，以 `state` 自身为键，TTL 如 600s。**不存于 Cookie 会话**（发起授权时用户通常未登录，无主站 sid）。参考 OIDC 规范，`state` 用于防 CSRF 且一次性使用。
 
 **响应**：若成功，则 `302` 重定向至指定的 Provider （ Authorization Server ）的授权页。前端应通过新窗口或直接跳转的方式访问此端点。
 
@@ -210,11 +255,11 @@ OIDC 相关的用户操作端点。
 
 **后端处理**：
 1. 校验用户已登录
-2. 生成随机 `state`，存入 session
-3. 生成随机 `code_verifier`（43~128 字符），存入 session
+2. 生成随机 `state`，写入缓存 `oidc_state:{state}`（以 state 自身为 key）
+3. 生成随机 `code_verifier`（43~128 字符），写入同一缓存条目
 4. 计算 `code_challenge = base64url(sha256(code_verifier))`
-5. 在 session 中标记 `action = "bind"`
-6. 若前端传了 `redirect_uri`，校验其必须命中 `allowed_redirect_uris` 白名单（否则 403 拒绝）；将生效的跳转地址存入 session 作为回调后的跳转目标。未传时使用 `default_redirect_uri`（未配置则回退到根路径 `/`）。匹配规则同 authorize（比较 `scheme + host:port + path`，忽略 query）
+5. 在该缓存条目中标记 `action = "bind"`
+6. 若前端传了 `redirect_uri`，校验其必须命中 `allowed_redirect_uris` 白名单（否则 403 拒绝）；将生效的跳转地址存入缓存条目作为回调后的跳转目标。未传时使用 `default_redirect_uri`（未配置则回退到根路径 `/`）。匹配规则同 authorize（比较 `scheme + host:port + path`，忽略 query）
 7. 构造 Provider 授权 URL，附加 `code_challenge` 和 `code_challenge_method=S256`，302 重定向
 
 **响应**：与 `/authorize` 相同，`302` 重定向至 Provider 授权页。
@@ -235,17 +280,18 @@ OIDC 相关的用户操作端点。
 | `error_description` | 失败时的人类可读描述                     |
 
 **后端处理**：
-1. 校验 `state` 是否匹配
+1. 以 `state` 为 key 从缓存 `oidc_state:{state}` 取流程上下文；`state` 缺失/过期视为流程上下文不可还原
 2. 若存在 `error` 参数，直接 302 重定向到前端，附带错误信息
-3. 用 `code` + `code_verifier`（从 session 取出）调 Provider 的 `/token` 端点
+3. 用 `code` + `code_verifier`（从缓存条目取出）调 Provider 的 `/token` 端点
 4. 验证 `id_token`（签名、iss、aud、exp）
 5. 可选：调 `/userinfo` 获取更多 claims
-6. 根据 session 中的 `action` 决定：
-    - `login`：创建或匹配本地用户，建立本地 session（`Set-Cookie`）
+6. 根据缓存条目中的 `action` 决定：
+    - `login`：创建或匹配本地用户，建立本地 session（`Set-Cookie`）。**匹配键只能是该 OIDC 的 `(issuer, subject)` 组合**——若已存在相应 `oidc_records` 则直接登录该本地账号；**绝不能按 `users.email` 或用户名去匹配主站用户**（OIDC 提供商提供的邮箱与本地 `users.email` 相互独立、互不互通）。若不存在对应记录，则新建本地用户，其 `username` 取该 OIDC 的 username claim（如 `preferred_username`/`username`），写入 `oidc_records`（含 `(issuer, subject)`）并在 `oidc_records.username` 记录该用户名（其余字段与其他登录方式一致，不额外改动）
     - `bind`：校验用户已登录，将 Provider 账号关联到当前用户（若该 Provider 账号已被其他用户绑定，返回错误；若当前用户已绑定该 Provider，视为幂等，直接成功）
-7. 从 session 取出生效的跳转地址（授权时存入：传入且命中白名单 → 使用它；未传 → 使用 `default_redirect_uri`；均无 → 根路径 `/`），302 重定向至该地址。
+7. 从缓存取出生效的跳转地址（授权时写入：传入且命中白名单 → 使用它；未传 → 使用 `default_redirect_uri`；均无 → 根路径 `/`），302 重定向至该地址。
+   - 为保证并发安全，`login` 新建本地用户与 `bind` 关联均应基于 `(issuer, subject)` 唯一性使用 upsert，避免同一外部账号被并发绑定多个本地用户。
 
-> **说明**：跳转地址优先取授权时存入 session 的值。若 `state` 缺失/过期（流程上下文不可还原），则直接回退到 `default_redirect_uri`（未配置则根路径 `/`）。
+> **说明**：跳转地址优先取授权时写入缓存的值。若 `state` 缺失/过期（流程上下文不可还原），则直接回退到 `default_redirect_uri`（未配置则根路径 `/`）。
 
 **响应（重定向到前端时）**：
 成功：302 跳转到前端回调页。登录时通过 `Set-Cookie` 建立会话；绑定时无需额外操作。
@@ -275,5 +321,69 @@ OIDC 相关的用户操作端点。
 ```json5
 {
    "bindingOIDC": ["google"]  // 解绑后剩余的绑定列表
+}
+```
+
+## 通知与公告 (Cookie身份验证)
+
+### GET /user/notifications
+
+获取当前用户的站内通知列表。
+
+**请求**：凭据通过 Cookie 传递，请求体为空。
+
+**查询参数**：`page` / `pageSize`（可选，默认 1 / 20）。
+
+**响应**：`200`：
+```json5
+{
+  "total": 12,
+  "unread": 3,
+  "page": 1,
+  "pageSize": 20,
+  "items": [
+    {
+      "id": "n_01H...",
+      "title": "欢迎加入社区",
+      "content": "这里是内容",
+      "isRead": false,
+      "createdAt": "2026-08-08T10:30:00Z"
+    }
+  ]
+}
+```
+
+### PUT /user/notifications/{id}/read
+
+将指定通知标记为已读（全部已读时可不传 `{id}`，即 `PUT /user/notifications/read`）。
+
+**请求**：凭据通过 Cookie 传递，请求体为空。
+
+**响应**：成功返回 `204`，无响应体。
+
+**备注**：通知不存在或不属于当前用户返回 `404`，`error` 为 `NotificationNotFound`。
+
+### GET /user/announcements
+
+获取当前生效的全站公告列表。
+
+**请求**：凭据通过 Cookie 传递，请求体为空。
+
+**查询参数**：`page` / `pageSize`（可选）。
+
+**响应**：`200`：
+```json5
+{
+  "total": 2,
+  "page": 1,
+  "pageSize": 20,
+  "items": [
+    {
+      "id": "a_01H...",
+      "title": "维护通知",
+      "content": "今晚 00:00 停机维护。",
+      "publishedAt": "2026-08-08T10:30:00Z"
+    }
+  ]
 }
 ```

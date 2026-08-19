@@ -8,10 +8,21 @@
 
 - [user 端点](EP-user.md)
 - [email 端点](EP-email.md)
-- [admin 端点](EP-admin.md)
+- [management 端点](management/index.md)
+- [management users 端点](management/EP-users.md)
+- [management 前缀 端点](management/EP-prefixes.md)
+- [management votes 端点](management/EP-votes.md)
+- [management issues 端点](management/EP-issues.md)
+- [management bans 端点](management/EP-bans.md)
+- [management audit-logs 端点](management/EP-audit-logs.md)
+- [management yggdrasil 端点](management/EP-yggdrasil.md)
+- [management console 后台端点](management/console/index.md)
+- [votes 投票端点](EP-votes.md)
+- [issues 议题端点](EP-issues.md)
 - [captcha 端点](EP-captcha.md)
 - [错误码速查表](./error.md)
 - [数据库表结构（SQL）](./SQL.md)
+- [缓存（Cache）](./cache.md)
 - [速率限制](./ratelimit.md)
 
 ### Yggdrasil 相关
@@ -31,7 +42,8 @@
 * 请求与响应均为 JSON 格式。
 * `Content-Type` 均为 `application/json; charset=utf-8`。
 * 统一使用 ISO 8601 格式的 UTC 字符串表示时间。
-* 密码使用 Bcrypt 加密存储。
+* 密码使用 Bcrypt 进行加盐哈希（Salt + Hashing）存储。
+* **输出转义**：所有对外渲染的文本（用户名、前缀、身份组名、投票/议题的标题/正文/评论、公告、角色名、OIDC 展示名等）一律**转义后输出**，杜绝 HTML / 富文本注入导致的存储型 XSS；任何按「按原样展示」设计的富文本字段须显式走白名单清洗后再渲染。
 
 ### 错误信息格式
 
@@ -60,26 +72,38 @@ Http 状态码按通用约定返回。
 |   Path   |     /     |             |
 | Max-Age  | 86400（示例） | 24 小时过期（示例） |
 
+> **会话有效期补充**：
+> - 主站会话（`sid`）采用**滑动过期**机制：每次有效请求或登录成功后自动刷新 `Max-Age`（续期最长为 86400s），用户持续有操作则不会被强制登出。
+> - 后台会话（JWT）**不自动续期**，`expiresIn` 固定（如 3600s）。JWT 先于主站 Cookie 过期时，需重新通过后台登录换取新 JWT（主站 Cookie 通常仍有效，可直接复用，无需重新登录主站）。
+
 ## 模型
 
-### 系统角色、权限模型、用户身份
+### 系统角色、身份组、权限模型
 
-系统角色依次为：`User` 用户、`Helper` 协管、`Moderator` 版主、`Admin` 管理。  
-系统角色层级为 User < Helper < Moderator < Admin。
+采用**并行双模型**：
 
-权限为权限节点式，凡是需要权限的端点都在端点中标记出来，权限检查以是否拥有权限节点为准。
+- **系统角色（role）**：`User` 用户、`Helper` 协管、`Moderator` 版主、`Admin` 管理员。层级 User < Helper < Moderator < Admin。用户必有一个，权限节点表相对固定（内建）。
+- **身份组（identity group）**：相当于自定义角色，一名用户可属于**多个**身份组（也可不属任何组）。身份组的元数据（id、名称）存库，权限节点列表由配置文件定义。
 
-用户身份需要在配置文件中定义，需指明 id、展示名（用作前缀或者后缀）、权限节点。用户身份和系统角色不绑定。  
+权限为粒度式，凡是需要权限的端点都在端点中标记出来，并标注默认最低系统角色。  
+实际权限 = **系统角色内建节点 ∪ 该用户所属全部身份组节点**（并集），任一来源拥有即放行。  
 权限节点均从配置文件动态读取，不写死具体权限。
 
 #### 管理后台
 
-其中一些全局性的或者危险的操作，则需要使用管理后台，只有 Admin 用户可以使用。  
-管理后台采用独立的鉴权机制，需要已登录主站的 Admin 角色进行二次登录，输入强密码。此密码为直接生成，不是由管理员自行设置。  
-第一个管理员如何设置参考后端命令系统。
+其中一些全局性的或者危险的操作，则需要使用管理后台，仅系统角色为 `Admin` 的用户可使用。  
+每个 Admin 用户有**唯一**后台账户；后台采用独立鉴权：登录需校验主站 Cookie（确认已登录且为 Admin）+ 后台密码（由系统直接生成），签发后台 JWT。后台请求需同时携带主站 Cookie 与后台 JWT。  
+后台操作一律计入后台审计日志；主站需要权限节点的操作计入主站审计日志。
 
-管理后台的权限不使用权限节点制度，而是分为 Admin 和 SuperAdmin 两个管理后台专属级别，和主站独立。 SuperAdmin 最多设置两名。  
-后台的权限要求由后台端点规定。
+#### 用户展示
+
+用户前端展示格式为 `[前缀]username[身份组][系统角色]`，一律展示 `username`。`display_name` 仅为兼容保留字段（SQL 暂不删除），前端**不再使用**，一律以 `username` 展示。
+
+**前缀为多前缀模型**：
+- 前缀预设（含**展示名 `displayName`** 与**背景色 `backgroundColor`**）由后台 SuperAdmin 在 `/management/console` 维护；
+- 版主（Moderator）以上角色在 `/management` 为用户**授予 / 收回**前缀（多对多）；
+- 一名玩家可持有**多个**前缀，可通过 `PUT /user/me/prefix` 选择**佩戴其中一个**，或选择**不佩戴**（置空）；
+- 前端展示该玩家当前佩戴的单个前缀（若佩戴）。
 
 ### 审计日志
 

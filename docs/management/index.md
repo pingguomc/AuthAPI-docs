@@ -1,99 +1,76 @@
-# 端点： /management
+# 端点：/management
 
-本端点全部需要身份验证,采用 [Cookie HttpOnly 会话](./index.md#cookie-格式)。
+主站管理端点。本端点全部需要身份验证，采用 [Cookie HttpOnly 会话](../index.md#cookie-格式)。
 
-访问本端点下的任意接口要求会话用户拥有每个节点指定的权限，否则返回 `403`。
+## 权限
+
+访问本端点下的任意接口要求会话用户拥有对应的 **权限节点**，否则返回 `403`，`error` 为 `Forbidden`。
+
+权限判断采用并行双模型，实际节点 = 系统角色内建节点 ∪ 所属身份组节点，见 [权限体系](../SQL.md#权限体系说明)。
 
 ## 目录
 
-按 Helper > Moderator > Admin 的默认拥有节点排序。
+管理端点按功能分文件：
 
+- [用户管理（/management/users）](EP-users.md)
+- [Yggdrasil 管理（/management/yggdrasil）](EP-yggdrasil.md)
+- [前缀（/management/prefix-presets、授予/收回）](EP-prefixes.md)
+- [投票管理（/management/votes）](EP-votes.md)
+- [Issue 管理（/management/issues）](EP-issues.md)
+- [封禁（/management/bans）](EP-bans.md)
+- [审计日志（/management/audit-logs）](EP-audit-logs.md)
+- [管理后台（/management/console）](console/index.md)
 
-## 获取用户列表
+本文内涉及的权限节点及默认最低系统角色（缺省为 `Moderator`）：
 
-`GET /management/users`
+| 权限节点                         | 说明             | 默认最低系统角色                     |
+|------------------------------|----------------|------------------------------|
+| `management.identity_groups` | 身份组列表          | `Moderator`                  |
+| `management.prefix.assign`   | 前缀授予/收回        | `Moderator`（版主）              |
+| `management.votes`           | 投票创建 / 管理      | `Moderator`（版主）              |
+| `management.votes.data`      | 查看投票统计数据       | `Helper`（协管）                 |
+| `management.issues`          | Issue 标签分配、开/关 | `Helper` ~ `Moderator`（分见下表） |
+| `management.bans`            | 封禁管理           | `Moderator`                  |
+| `management.audit_logs`      | 主站审计日志查询       | `Moderator`                  |
 
-需要权限 `management.users`，默认拥有者 `Moderator`。
+> 身份组与系统角色的**写入**（分配/变更）在后台 [/management/console](console/index.md)，本端点仅读出。前缀预设的维护同样在后台 console，本端点的前缀子模块仅负责**授予 / 收回**。
 
-用户列表。
+Issue 相关操作的角色映射：
 
-**请求**：无请求体，查询参数如下：
+| 操作           | 端点                              | 权限节点                   | 默认角色          |
+| ------------- | -------------------------------- | ----------------------- | -------------- |
+| 标签创建 / 删除    | 后台 console                        | `issues.labels.manage`  | `Admin`（管理）     |
+| 给议题分配标签       | `/management/issues/{id}/labels`  | `issues.labels.assign`  | `Helper`（协管）    |
+| 议题打开/关闭（带原因）  | `/management/issues/{id}/state`   | `management.issues`     | `Moderator`（版主） |
+| 查看私有议题         | —                                | `issues.private_read`   | `Moderator`（版主） |
 
-|         参数         |   类型   | 说明                                           |
-|:------------------:|:------:|----------------------------------------------|
-|       `page`       |  int   | 页码,从 1 开始,默认 1                               |
-|     `pageSize`     |  int   | 每页条数,默认 20,上限 100                            |
-|        `q`         | string | 邮箱精确匹配 **或** 用户名前缀匹配,不做全文模糊                  |
-|       `role`       | string | 按角色筛选                                        |
-|      `status`      | string | 按状态筛选                                        |
-| `registeredAfter`  | string | 注册时间下界,ISO 8601 UTC                          |
-| `registeredBefore` | string | 注册时间上界,ISO 8601 UTC                          |
-|      `sortBy`      | string | 仅接受 `createdAt`、`lastLoginAt`,默认 `createdAt` |
-|      `order`       | string | `asc` / `desc`,默认 `desc`                     |
+> `issues.private_read` 默认授予 `Moderator` 及以上。
 
-`sortBy` 取值不在白名单内返回 `400`。
+---
 
-**响应**: 成功返回HTTP状态码 `200`，响应体如下：
+## 身份组
+
+需要权限节点 `management.identity_groups`。该端点仅**读出**身份组信息，组的创建/改名/删除与用户分配在后台 [/management/console](console/index.md)。
+
+### GET /management/identity-groups
+
+身份组列表。
+
+**权限**：`management.identity_groups`，默认最低系统角色 `Moderator`。
+
+**请求**：无请求体，查询参数 `page` / `pageSize`（可选）。
+
+**响应**：
 
 ```json5
 {
-  "total": 1234,//符合条件的总数
+  "total": 5,
   "page": 1,
   "pageSize": 20,
-  "users": [
-    {
-      "id": "...",
-      "username": "显示的用户名",
-      "email": "user@example.com",
-      "role": "user",
-      "lastLoginAt": "2026-08-08T10:30:00Z", //从未登录为 null
-      "createdAt": "2026-08-08T10:30:00Z"
-    },
-    {
-      // ...
-    }
+  "groups": [
+    { "id": "g_01H...", "name": "groupA", "displayName": "Group A" }
   ]
 }
 ```
 
-**备注** :
-* 列表其他信息，在详情接口提供。
-
-## 获取用户信息
-
-`GET /admin/users/{userId}`
-
-需要权限 `management.users`，默认拥有者 `Moderator`。
-
-用户详情。
-
-**请求**：无请求体。
-
-**响应**: 成功返回HTTP状态码 `200`:
-
-```json5
-{
-  "id": "u_01H...",
-  "displayName": "显示的用户名",
-  "email": "user@example.com",
-  "role": "user",
-  "status": "active",
-  "bannedUntil": null,
-  "lastLoginAt": "2026-08-08T10:30:00Z",
-  "lastLoginIp": "203.0.113.1",
-  "registerIp": "203.0.113.1",
-  "createdAt": "2026-08-08T10:30:00Z",
-  "oidcBindings": [  //参见 ./EP-user.md#端点useroidc
-    {
-      "providerId": "github",
-      "boundAt": "2026-08-08T10:30:00Z"
-    }
-  ]
-}
-```
-
-用户不存在返回 `404`,`error` 为 `UserNotFound`。
-
-
-
-
+**备注**：身份组的权限节点列表由配置文件定义，本接口不返回权限节点。
